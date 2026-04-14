@@ -1,0 +1,5 @@
+{
+  "name": "NEXUS — Personal OS",
+  "description": "A pro-level personal operating system for managing tasks, health, career, and goals with AI-powered insights.",
+  "requestFramePermissions": ["microphone"]
+}
