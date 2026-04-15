@@ -96,7 +96,13 @@ export default function AIAssistant({ onSaveTask, tasks }: AIProps) {
     setInput("");
     setIsLoading(true);
 
-    const history = messages.map(m => ({ role: m.role, content: m.content }));
+    const history = messages.map(m => {
+      let content = m.content;
+      if (m.role === 'ai' && m.proposedTasks && m.proposedTasks.length > 0) {
+        content += "\n\n[CONTEXT: I previously proposed these tasks: " + JSON.stringify(m.proposedTasks) + "]";
+      }
+      return { role: m.role, content };
+    });
     history.push({ role: 'user', content: messageText });
 
     const response = await getAIResponse(history);
@@ -195,9 +201,18 @@ export default function AIAssistant({ onSaveTask, tasks }: AIProps) {
                       <GlassCard className="p-4 bg-white/5 border-white/10">
                         <div className="flex items-center justify-between mb-4">
                           <span className="text-xs font-bold uppercase tracking-widest text-electric-blue">Proposed Tasks ({msg.proposedTasks.length})</span>
-                          <Button 
-                            size="sm" 
-                            onClick={() => {
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSend("Please refine all these tasks. Suggest more subtasks and details for each.")}
+                              className="h-8 text-[10px] text-electric-blue hover:bg-electric-blue/10"
+                            >
+                              <RefreshCw className="w-3 h-3 mr-1" /> Refine All
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              onClick={() => {
                               msg.proposedTasks?.forEach(task => {
                                 if (onSaveTask) onSaveTask({ ...task, status: 'todo' });
                               });
@@ -214,7 +229,8 @@ export default function AIAssistant({ onSaveTask, tasks }: AIProps) {
                             Confirm & Save All
                           </Button>
                         </div>
-                        <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
+                      </div>
+                      <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
                           {msg.proposedTasks.map((task: any, idx: number) => (
                             <div key={idx} className="p-3 rounded-xl bg-surface border border-white/5 space-y-2">
                               <div className="flex items-start gap-2">
@@ -233,6 +249,14 @@ export default function AIAssistant({ onSaveTask, tasks }: AIProps) {
                                   <option value="P3">P3</option>
                                   <option value="P4">P4</option>
                                 </select>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => handleSend(`Refine this task: "${task.title}". Please break it down further or suggest more details.`)}
+                                  className="h-7 px-2 text-[10px] text-electric-blue hover:bg-electric-blue/10"
+                                >
+                                  <RefreshCw className="w-3 h-3 mr-1" /> Refine
+                                </Button>
                               </div>
                               <input 
                                 value={task.description || ''} 

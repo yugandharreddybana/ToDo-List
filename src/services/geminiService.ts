@@ -22,6 +22,7 @@ export async function getAIResponse(messages: {role: string, content: string}[])
 The user wants to create tasks or projects.
 If the user's request is vague, ask clarifying questions before creating tasks.
 CRITICAL INSTRUCTION: If the user requests a large or complex task (e.g., "build a portfolio website", "plan a trip", "write a research paper"), you MUST automatically break it down into smaller, actionable steps. You can do this by generating a single task with multiple 'subtasks', or by proposing multiple distinct tasks if they span different categories or dates.
+REFINEMENT: The user may ask to refine, break down, or modify previously proposed tasks (which will be provided in the conversation history as [CONTEXT: ...]). If they do, respond with the updated list of tasks in the 'proposedTasks' field.
 Once you have enough information, propose a list of tasks (and subtasks) to achieve their goal.
 Always respond in JSON format with a 'message' field (your response to the user) and an optional 'proposedTasks' array if you are proposing tasks to be created.
 Current Date and Time: ${new Date().toLocaleString()}`;
