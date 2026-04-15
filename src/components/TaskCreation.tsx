@@ -63,6 +63,24 @@ export default function TaskCreation({ onClose, onSave, initialTab = 'manual', i
   const [conversationHistory, setConversationHistory] = useState<{role: string, text: string}[]>([]);
   const recognitionRef = useRef<any>(null);
 
+  const updateAiResultTask = (idx: number, field: string, value: any) => {
+    setAiResult((prev: any) => {
+      const newResult = [...prev];
+      newResult[idx] = { ...newResult[idx], [field]: value };
+      return newResult;
+    });
+  };
+
+  const updateAiResultSubtask = (taskIdx: number, stIdx: number, value: string) => {
+    setAiResult((prev: any) => {
+      const newResult = [...prev];
+      const newSubtasks = [...newResult[taskIdx].subtasks];
+      newSubtasks[stIdx] = value;
+      newResult[taskIdx] = { ...newResult[taskIdx], subtasks: newSubtasks };
+      return newResult;
+    });
+  };
+
   const categories = ['Work', 'Study', 'Health', 'Career', 'Personal', 'Side Project'];
   const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -771,31 +789,108 @@ If the request is clear enough, generate the tasks and set 'needsConfirmation' t
                       </div>
                       <div className="max-h-[400px] overflow-y-auto space-y-3 pr-2 scrollbar-hide">
                         {aiResult.map((task: any, i: number) => (
-                          <GlassCard key={i} className="p-5 border-electric-blue/30 bg-electric-blue/5">
-                            <div className="flex items-start justify-between mb-3">
-                              <div>
-                                <h4 className="text-lg font-bold text-electric-blue mb-1">{task.title}</h4>
+                          <GlassCard key={i} className="p-5 border-electric-blue/30 bg-electric-blue/5 space-y-4">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 space-y-1">
+                                <input 
+                                  value={task.title}
+                                  onChange={(e) => updateAiResultTask(i, 'title', e.target.value)}
+                                  className="w-full bg-transparent border-b border-white/10 text-lg font-bold text-electric-blue focus:outline-none focus:border-electric-blue transition-colors"
+                                />
                                 <div className="flex items-center gap-2 text-xs text-gray-muted">
-                                  <Calendar className="w-3 h-3" /> {task.date}
+                                  <Calendar className="w-3 h-3" />
+                                  <input 
+                                    value={task.date}
+                                    onChange={(e) => updateAiResultTask(i, 'date', e.target.value)}
+                                    className="bg-transparent border-b border-white/10 focus:outline-none focus:border-electric-blue transition-colors w-full"
+                                  />
                                 </div>
                               </div>
-                              <Badge priority={task.priority}>{task.priority}</Badge>
+                              <select 
+                                value={task.priority}
+                                onChange={(e) => updateAiResultTask(i, 'priority', e.target.value)}
+                                className="bg-surface border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none"
+                              >
+                                <option value="P1">P1</option>
+                                <option value="P2">P2</option>
+                                <option value="P3">P3</option>
+                                <option value="P4">P4</option>
+                              </select>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => processVoiceInput(`Refine this task: "${task.title}". Please break it down further or suggest more details.`)}
+                                className="h-7 px-2 text-[10px] text-electric-blue hover:bg-electric-blue/10"
+                              >
+                                <RefreshCw className="w-3 h-3 mr-1" /> Refine
+                              </Button>
                             </div>
-                            {task.description && <p className="text-sm text-gray-muted mb-3">{task.description}</p>}
+
+                            <textarea 
+                              value={task.description || ''}
+                              onChange={(e) => updateAiResultTask(i, 'description', e.target.value)}
+                              placeholder="Description (optional)"
+                              rows={1}
+                              className="w-full bg-transparent border-b border-white/10 text-sm text-gray-muted focus:outline-none focus:border-electric-blue transition-colors resize-none"
+                            />
+
                             {task.subtasks && task.subtasks.length > 0 && (
-                              <div className="mb-3 space-y-1.5">
+                              <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-muted">Subtasks</label>
                                 {task.subtasks.map((st: string, j: number) => (
-                                  <div key={j} className="flex items-start gap-2 text-sm text-gray-300">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-electric-blue/50 mt-1.5 shrink-0" />
-                                    <span>{st}</span>
+                                  <div key={j} className="flex items-center gap-2 text-sm text-gray-300 group/st">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-electric-blue/50 shrink-0" />
+                                    <input 
+                                      value={st}
+                                      onChange={(e) => updateAiResultSubtask(i, j, e.target.value)}
+                                      className="flex-1 bg-transparent border-b border-white/10 focus:outline-none focus:border-electric-blue transition-colors"
+                                    />
+                                    <button 
+                                      onClick={() => {
+                                        const newSubtasks = task.subtasks.filter((_: any, idx: number) => idx !== j);
+                                        updateAiResultTask(i, 'subtasks', newSubtasks);
+                                      }}
+                                      className="text-gray-muted hover:text-red opacity-0 group-hover/st:opacity-100 transition-opacity"
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
                                   </div>
                                 ))}
+                                <button 
+                                  onClick={() => {
+                                    const newSubtasks = [...(task.subtasks || []), ''];
+                                    updateAiResultTask(i, 'subtasks', newSubtasks);
+                                  }}
+                                  className="text-[10px] text-electric-blue hover:underline"
+                                >
+                                  + Add Subtask
+                                </button>
                               </div>
                             )}
+
                             <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-white/10">
-                              <span className="px-2 py-1 rounded-lg bg-white/5 text-[10px] font-bold uppercase tracking-wider">{task.category}</span>
-                              {task.tags?.map((tag: string) => (
-                                <span key={tag} className="px-2 py-1 rounded-lg bg-white/5 text-[10px] text-gray-muted">#{tag}</span>
+                              <select 
+                                value={task.category}
+                                onChange={(e) => updateAiResultTask(i, 'category', e.target.value)}
+                                className="bg-white/5 border border-white/10 rounded px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-white focus:outline-none"
+                              >
+                                {categories.map(c => (
+                                  <option key={c} value={c}>{c}</option>
+                                ))}
+                              </select>
+                              {task.tags?.map((tag: string, tagIdx: number) => (
+                                <div key={tagIdx} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 text-[10px] text-gray-muted">
+                                  <span>#{tag}</span>
+                                  <button 
+                                    onClick={() => {
+                                      const newTags = task.tags.filter((_: any, idx: number) => idx !== tagIdx);
+                                      updateAiResultTask(i, 'tags', newTags);
+                                    }}
+                                    className="hover:text-red"
+                                  >
+                                    <X className="w-2 h-2" />
+                                  </button>
+                                </div>
                               ))}
                             </div>
                           </GlassCard>

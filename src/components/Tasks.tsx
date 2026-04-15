@@ -57,6 +57,17 @@ export default function Tasks({ tasks, onViewTask, onOpenTaskModal }: any) {
     if (activeFilter === 'Overdue') return task.date && task.date < today && task.status !== 'done';
     
     return true;
+  }).sort((a: any, b: any) => {
+    // Priority first (P1 < P2 < P3 < P4 numerically for sorting)
+    const pA = parseInt(a.priority?.replace('P', '') || '4');
+    const pB = parseInt(b.priority?.replace('P', '') || '4');
+    if (pA !== pB) return pA - pB;
+    
+    // Date second (Earlier first)
+    if (!a.date && !b.date) return 0;
+    if (!a.date) return 1;
+    if (!b.date) return -1;
+    return new Date(a.date).getTime() - new Date(b.date).getTime();
   });
 
   const groupedTasks = {

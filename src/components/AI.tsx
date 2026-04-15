@@ -64,6 +64,58 @@ export default function AIAssistant({ onSaveTask, tasks }: AIProps) {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Voice States
+  const [isRecording, setIsRecording] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState("");
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+
+      recognition.onresult = (event: any) => {
+        let final = "";
+        let interim = "";
+        for (let i = 0; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            final += event.results[i][0].transcript;
+          } else {
+            interim += event.results[i][0].transcript;
+          }
+        }
+        setVoiceTranscript(final + interim);
+      };
+
+      recognition.onend = () => setIsRecording(false);
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const startRecording = () => {
+    setVoiceTranscript("");
+    setIsRecording(true);
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.start();
+      } catch (e) {
+        console.error("Failed to start recognition:", e);
+      }
+    }
+  };
+
+  const stopRecording = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    if (voiceTranscript.trim()) {
+      handleSend(voiceTranscript);
+    }
+    setVoiceTranscript("");
+  };
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -360,20 +412,29 @@ export default function AIAssistant({ onSaveTask, tasks }: AIProps) {
           </div>
 
           <div className="relative flex items-center gap-2">
-            <div className="absolute left-3 text-gray-muted">
+            <button 
+              onClick={isRecording ? stopRecording : startRecording}
+              className={cn(
+                "absolute left-3 transition-colors",
+                isRecording ? "text-red animate-pulse" : "text-gray-muted hover:text-electric-blue"
+              )}
+            >
               <Mic className="w-4 h-4" />
-            </div>
+            </button>
             <input 
               type="text" 
-              value={input}
+              value={isRecording ? voiceTranscript : input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Ask NEXUS anything..." 
-              className="flex-1 bg-surface border border-white/8 rounded-xl py-3 pl-10 pr-12 focus:outline-none focus:border-electric-blue/50 transition-colors"
+              placeholder={isRecording ? "Listening..." : "Ask NEXUS anything..."} 
+              className={cn(
+                "flex-1 bg-surface border rounded-xl py-3 pl-10 pr-12 focus:outline-none transition-colors",
+                isRecording ? "border-red/50 text-red italic" : "border-white/8 focus:border-electric-blue/50"
+              )}
             />
             <Button 
               onClick={() => handleSend()}
-              disabled={!input.trim() || isLoading}
+              disabled={(!input.trim() && !voiceTranscript.trim()) || isLoading}
               className="absolute right-1.5 w-10 h-10 p-0 rounded-lg"
             >
               <Send className="w-4 h-4" />
