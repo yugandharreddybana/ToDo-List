@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { GlassCard, Button } from './UI';
-import { Server, Target, Brain, ArrowRight, Check } from 'lucide-react';
+import { Server, Target, Brain, ArrowRight, Check, Cpu, Zap, Activity } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 
 interface OnboardingProps {
@@ -17,93 +17,107 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center">
       <motion.div 
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         exit={{ opacity: 0 }} 
-        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        className="absolute inset-0 bg-zenith-bg backdrop-blur-[100px]"
       />
       
+      {/* Background Decor - Minimalist & Executive */}
+      <div className="absolute inset-0 pointer-events-none opacity-5">
+         <div className="absolute top-0 right-0 p-32">
+            <Target className="w-96 h-96 text-zenith-accent rotate-12" />
+         </div>
+         <div className="absolute bottom-0 left-0 p-32">
+            <Activity className="w-96 h-96 text-zenith-success -rotate-12" />
+         </div>
+      </div>
+
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 20 }} 
+        initial={{ opacity: 0, scale: 1.05, y: 20 }} 
         animate={{ opacity: 1, scale: 1, y: 0 }} 
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-lg"
+        exit={{ opacity: 0, scale: 0.95, y: -20 }}
+        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        className="relative w-full max-w-4xl px-8"
       >
-        <GlassCard className="p-8 flex flex-col min-h-[400px]">
-          <div className="flex-1">
+        <div className="glass-surface p-16 md:p-24 flex flex-col min-h-[700px] border-white/5 bg-white/[0.02] shadow-2xl rounded-[4rem] relative overflow-hidden backdrop-blur-3xl">
+          <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none group-hover:scale-150 transition-transform duration-1000 rotate-12 text-white">
+            <Cpu className="w-64 h-64" />
+          </div>
+
+          <div className="flex-1 relative z-10">
             <AnimatePresence mode="wait">
               {step === 1 && (
-                <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-electric-blue/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-electric-blue/30">
-                      <Target className="w-8 h-8 text-electric-blue" />
+                <motion.div key="step1" initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -20, filter: 'blur(10px)' }} transition={{ duration: 0.8 }} className="space-y-16">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-6">
+                      <div className="h-[1.5px] w-12 bg-zenith-emerald" />
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-[0.6em] text-zenith-emerald">Initial Calibration_01</span>
                     </div>
-                    <h2 className="text-2xl font-bold">Set Your Daily Targets</h2>
-                    <p className="text-gray-muted text-sm mt-2">Establish your baseline for a productive day.</p>
+                    <h2 className="text-7xl md:text-8xl font-display font-semibold text-white tracking-tighter italic leading-none">Biological <br /><span className="text-white/20 not-italic">Equilibrium.</span></h2>
                   </div>
                   
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between text-sm mb-2"><span className="text-gray-300">Sleep Goal</span><span className="font-mono text-electric-blue">8 hrs</span></div>
-                      <input type="range" min="4" max="12" defaultValue="8" className="w-full accent-electric-blue" />
+                  <div className="space-y-16 max-w-2xl">
+                    <div className="space-y-6">
+                      <div className="flex justify-between text-[10px] font-mono text-white/30 uppercase tracking-[0.5em] font-bold"><span>Nocturnal Recovery Depth</span><span className="text-white font-bold">8.0 HRS</span></div>
+                      <div className="h-[1.5px] w-full bg-white/5 relative">
+                         <div className="absolute inset-y-0 left-0 bg-white w-2/3 shadow-[0_0_15px_rgba(255,255,255,0.5)]" />
+                      </div>
                     </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-2"><span className="text-gray-300">Water Intake</span><span className="font-mono text-electric-blue">3.0 L</span></div>
-                      <input type="range" min="1" max="5" step="0.5" defaultValue="3" className="w-full accent-electric-blue" />
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-2"><span className="text-gray-300">Deep Work</span><span className="font-mono text-electric-blue">4 hrs</span></div>
-                      <input type="range" min="1" max="10" defaultValue="4" className="w-full accent-electric-blue" />
+                    <div className="space-y-6">
+                      <div className="flex justify-between text-[10px] font-mono text-white/30 uppercase tracking-[0.5em] font-bold"><span>Tactical Hydration Goal</span><span className="text-zenith-emerald font-bold">3.5 L</span></div>
+                      <div className="h-[1.5px] w-full bg-white/5 relative">
+                         <div className="absolute inset-y-0 left-0 bg-zenith-emerald w-1/2 shadow-[0_0_15px_rgba(0,245,160,0.5)]" />
+                      </div>
                     </div>
                   </div>
                 </motion.div>
               )}
 
               {step === 2 && (
-                <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/30">
-                      <Server className="w-8 h-8 text-purple-500" />
+                <motion.div key="step2" initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -20, filter: 'blur(10px)' }} transition={{ duration: 0.8 }} className="space-y-16">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-6">
+                      <div className="h-[1.5px] w-12 bg-zenith-emerald" />
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-[0.6em] text-zenith-emerald">Initial Calibration_02</span>
                     </div>
-                    <h2 className="text-2xl font-bold">Connect Your AI</h2>
-                    <p className="text-gray-muted text-sm mt-2">Link your MCP server for intelligent task management.</p>
+                    <h2 className="text-7xl md:text-8xl font-display font-semibold text-white tracking-tighter italic leading-none">Neural <br /><span className="text-white/20 not-italic">Integration.</span></h2>
                   </div>
                   
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-widest text-gray-muted mb-2">MCP Server URL</label>
-                      <input type="text" placeholder="http://localhost:3001/mcp" className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-electric-blue font-mono" />
+                  <div className="space-y-12 max-w-2xl">
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-mono text-white/20 uppercase tracking-[0.5em] font-bold ml-2">Uplink Encryption Key</label>
+                      <input type="password" placeholder="ZENITH_SECURE_NODE_..." className="w-full glass-surface border-white/5 rounded-3xl p-10 text-xl font-mono outline-none focus:border-white transition-all text-white placeholder:text-white/5" />
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-widest text-gray-muted mb-2">API Key</label>
-                      <input type="password" placeholder="sk-..." className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-electric-blue font-mono" />
+                    <div className="p-8 glass-surface border-white/5 bg-white/[0.02] rounded-3xl">
+                       <p className="text-white/40 text-lg leading-relaxed italic font-light">By establishing a neural link, you authorize Zenith AI to manage your strategic roadmap autonomously with <span className="text-white font-bold not-italic">Level 5 Security protocols.</span></p>
                     </div>
                   </div>
                 </motion.div>
               )}
 
               {step === 3 && (
-                <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
-                  <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-emerald-green/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-green/30">
-                      <Brain className="w-8 h-8 text-emerald-green" />
+                <motion.div key="step3" initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }} animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }} exit={{ opacity: 0, y: -20, filter: 'blur(10px)' }} transition={{ duration: 0.8 }} className="space-y-16">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-6">
+                      <div className="h-[1.5px] w-12 bg-zenith-emerald" />
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-[0.6em] text-zenith-emerald">Initial Calibration_03</span>
                     </div>
-                    <h2 className="text-2xl font-bold">Choose Your Focus</h2>
-                    <p className="text-gray-muted text-sm mt-2">What are your primary areas of focus right now?</p>
+                    <h2 className="text-7xl md:text-8xl font-display font-semibold text-white tracking-tighter italic leading-none">Strategic <br /><span className="text-white/20 not-italic">Directives.</span></h2>
                   </div>
                   
-                  <div className="flex flex-wrap gap-3 justify-center">
-                    {['Career', 'Health', 'Side Projects', 'Study', 'Personal', 'Finance'].map(f => (
+                  <div className="flex flex-wrap gap-6 max-w-3xl">
+                    {['ENTERPRISE', 'WELLNESS', 'STRATEGY', 'INNOVATION', 'PORTFOLIO', 'LIFESTYLE'].map(f => (
                       <button
                         key={f}
                         onClick={() => toggleFocus(f)}
                         className={cn(
-                          "px-4 py-2 rounded-full text-sm font-medium transition-all border",
+                          "px-12 py-8 rounded-[2rem] text-[10px] font-mono font-bold uppercase tracking-[0.4em] transition-all duration-700 border",
                           focus.includes(f) 
-                            ? "bg-electric-blue text-background border-electric-blue shadow-[0_0_15px_rgba(0,191,255,0.4)]" 
-                            : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
+                            ? "bg-white text-black border-white shadow-[0_0_40px_rgba(255,255,255,0.2)] scale-110" 
+                            : "bg-transparent text-white/20 border-white/5 hover:border-white/20 hover:text-white"
                         )}
                       >
                         {f}
@@ -115,24 +129,25 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             </AnimatePresence>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-between">
-            <div className="flex gap-2">
+          <div className="mt-24 pt-12 border-t border-white/5 flex items-center justify-between relative z-10">
+            <div className="flex gap-6">
               {[1, 2, 3].map(i => (
-                <div key={i} className={cn("w-2 h-2 rounded-full transition-colors", step === i ? "bg-electric-blue" : "bg-white/20")} />
+                <div key={i} className={cn("h-[1.5px] rounded-full transition-all duration-1000", step === i ? "bg-zenith-emerald w-16 shadow-[0_0_10px_rgba(0,245,160,0.8)]" : "bg-white/10 w-4")} />
               ))}
             </div>
-            <div className="flex items-center gap-3">
-              <button onClick={onComplete} className="text-sm text-gray-muted hover:text-white transition-colors">Skip</button>
+            <div className="flex items-center gap-12">
+              <button onClick={onComplete} className="text-[10px] font-mono text-white/20 uppercase tracking-[0.5em] font-bold hover:text-white transition-all underline decoration-white/0 hover:decoration-white/20 underline-offset-8">SKIP_CALIBRATION</button>
               <Button 
                 onClick={() => step < 3 ? setStep(step + 1) : onComplete()} 
-                className="gap-2 bg-electric-blue text-background hover:bg-electric-blue/90"
+                variant={step === 3 ? 'zenith-emerald' : 'outline'}
+                className="gap-6 px-16 py-8 rounded-full text-sm font-bold tracking-widest uppercase font-mono shadow-2xl"
               >
-                {step < 3 ? 'Next' : 'Get Started'}
-                {step < 3 ? <ArrowRight className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                {step < 3 ? 'NEXT_PHASE' : 'FINALIZE_SYNC'}
+                {step < 3 ? <ArrowRight className="w-5 h-5" /> : <Check className="w-5 h-5" />}
               </Button>
             </div>
           </div>
-        </GlassCard>
+        </div>
       </motion.div>
     </div>
   );

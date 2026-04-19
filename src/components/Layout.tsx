@@ -6,7 +6,6 @@ import {
   Briefcase, 
   Settings,
   Bell,
-  User,
   Plus,
   Mic,
   Camera,
@@ -16,12 +15,13 @@ import {
   Target,
   CheckSquare,
   Search,
-  Droplets,
-  Flame,
-  Brain
+  X,
+  Cpu,
+  Navigation2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
+import { TechnicalLabel } from './UI';
 
 type NavItem = {
   id: string;
@@ -30,14 +30,11 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'home', icon: LayoutDashboard, label: 'Dashboard' },
-  { id: 'tasks', icon: CheckSquare, label: 'Tasks' },
-  { id: 'ai', icon: MessageSquareCode, label: 'NEXUS AI' },
-  { id: 'health', icon: HeartPulse, label: 'Health' },
-  { id: 'career', icon: Briefcase, label: 'Career' },
-  { id: 'timer', icon: TimerIcon, label: 'Timer' },
-  { id: 'analytics', icon: BarChart3, label: 'Analytics' },
-  { id: 'goals', icon: Target, label: 'Goals' },
+  { id: 'home', icon: LayoutDashboard, label: 'Overview' },
+  { id: 'tasks', icon: CheckSquare, label: 'Execution' },
+  { id: 'ai', icon: MessageSquareCode, label: 'Zenith AI' },
+  { id: 'health', icon: HeartPulse, label: 'Wellness' },
+  { id: 'career', icon: Briefcase, label: 'Enterprise' },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -49,362 +46,220 @@ interface LayoutProps {
 }
 
 export default function Layout({ children, activeTab, setActiveTab, onOpenTaskModal }: LayoutProps) {
-  const [isMobile, setIsMobile] = useState(false);
   const [isFabOpen, setIsFabOpen] = useState(false);
-  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [isCmdKOpen, setIsCmdKOpen] = useState(false);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [cmdKSearch, setCmdKSearch] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setIsCmdKOpen(prev => !prev);
       }
-      if (e.key === 'Escape') {
-        setIsCmdKOpen(false);
-        setIsNotificationsOpen(false);
-      }
+      if (e.key === 'Escape') setIsCmdKOpen(false);
     };
     window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('resize', checkMobile);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-background text-white overflow-hidden relative">
-      {/* PWA Offline Banner */}
-      <AnimatePresence>
-        {isOffline && (
-          <motion.div 
-            initial={{ y: -40 }}
-            animate={{ y: 0 }}
-            exit={{ y: -40 }}
-            className="fixed top-0 left-0 right-0 h-8 bg-amber text-background flex items-center justify-center text-xs font-bold z-[100]"
+    <div className="flex flex-col min-h-screen bg-zenith-bg text-white selection:bg-zenith-emerald/30 overflow-x-hidden relative selection:text-zenith-emerald">
+      
+      {/* Cinematic Background Atmosphere */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.15, 0.25, 0.15]
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-[20%] -left-[10%] w-[120%] h-[120%] bg-gradient-to-br from-black via-black to-zenith-emerald/10 blur-[180px] opacity-20" 
+        />
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] aura-glow opacity-10" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-white/5 blur-[150px] rounded-full opacity-5" />
+      </div>
+
+      {/* Floating Header */}
+      <header className="fixed top-0 left-0 right-0 h-28 px-12 flex items-center justify-between z-50 bg-zenith-bg/80 backdrop-blur-3xl border-b border-white/5">
+        <div className="flex items-center gap-8">
+          <div className="group relative">
+            <div className="absolute inset-0 bg-white/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="w-14 h-14 rounded-2xl glass-surface flex items-center justify-center relative z-10 hover:scale-110 transition-transform cursor-pointer">
+              <Target className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-mono uppercase tracking-[0.5em] text-white/30 font-bold mb-1">Strategic Command</span>
+            <span className="text-3xl font-display font-semibold text-white tracking-widest uppercase">Zenith</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-12 px-10 py-4 glass-surface rounded-full">
+            <TechnicalLabel label="System Mode" value="OPERATIONAL_ELITE" color="text-zenith-emerald" />
+            <div className="w-[1px] h-8 bg-white/10" />
+            <TechnicalLabel label="Status" value="COHERENCE_99%" color="text-white" />
+          </div>
+          <button 
+            onClick={() => setIsCmdKOpen(true)}
+            className="w-16 h-16 flex items-center justify-center glass-surface rounded-2xl hover:bg-white/10 transition-all active:scale-95 group shadow-inner"
           >
-            Offline — Changes will sync when reconnected.
-          </motion.div>
+            <Search className="w-6 h-6 text-white/50 group-hover:text-white transition-colors" />
+          </button>
+        </div>
+      </header>
+
+      {/* Main Narrative Viewport */}
+      <main className="flex-1 relative z-10 pt-40 pb-52">
+        <div className="max-w-screen-2xl mx-auto px-12 h-full">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, filter: 'blur(10px)', y: 20 }}
+              animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+              exit={{ opacity: 0, filter: 'blur(10px)', y: -20 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="h-full"
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </main>
+
+      {/* Futuristic Floating Navigation */}
+      <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4">
+        <nav className="glass-surface p-2.5 rounded-full flex items-center gap-1 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+          {NAV_ITEMS.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={cn(
+                "nav-pill group relative flex items-center justify-center w-14 h-14 md:w-auto md:px-8",
+                activeTab === item.id ? "nav-pill-active" : "hover:bg-white/5 text-white/40 hover:text-white"
+              )}
+            >
+              <item.icon className={cn(
+                "w-5 h-5 transition-transform duration-500",
+                activeTab === item.id ? "scale-110" : "scale-100"
+              )} />
+              
+              <span className={cn(
+                "hidden md:inline text-[10px] font-mono font-bold uppercase tracking-widest ml-3 overflow-hidden transition-all duration-700",
+                activeTab === item.id ? "max-w-[150px] opacity-100" : "max-w-0 opacity-0"
+              )}>
+                {item.label}
+              </span>
+            </button>
+          ))}
+        </nav>
+
+        <button 
+          onClick={() => setIsFabOpen(!isFabOpen)}
+          className={cn(
+            "w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 active:scale-90 shadow-[0_0_20px_rgba(255,255,255,0.1)]",
+            isFabOpen ? "bg-white text-black rotate-[135deg]" : "bg-zenith-emerald text-black"
+          )}
+        >
+          <Plus className="w-8 h-8" />
+        </button>
+      </div>
+
+      {/* Modal Actions */}
+      <AnimatePresence>
+        {isFabOpen && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-8 bg-black/60 backdrop-blur-2xl">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0"
+              onClick={() => setIsFabOpen(false)}
+            />
+            <div className="relative flex flex-col md:flex-row gap-8 max-w-7xl w-full">
+              {[
+                { label: 'Strategic Entry', icon: Edit3, id: 'manual', desc: 'Execute manual tactical override' },
+                { label: 'Asset Scan', icon: Camera, id: 'scan', desc: 'Ingest visual data telemetry' },
+                { label: 'Voice Link', icon: Mic, id: 'voice', desc: 'Secure neural voice command' }
+              ].map((act, i) => (
+                <motion.button
+                  key={act.id}
+                  initial={{ opacity: 0, y: 50, rotateX: -30 }}
+                  animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ delay: i * 0.1, duration: 0.6 }}
+                  onClick={() => { onOpenTaskModal(act.id as any); setIsFabOpen(false); }}
+                  className="flex-1 p-12 glass-surface group hover:bg-white/[0.08] transition-all text-left flex flex-col justify-between aspect-video rounded-3xl overflow-hidden"
+                >
+                  <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-zenith-emerald transition-all transform group-hover:scale-110 group-hover:rotate-6">
+                    <act.icon className="w-8 h-8 group-hover:text-black transition-colors" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-mono text-white/30 uppercase tracking-[0.4em] mb-2 block">{act.desc}</span>
+                    <span className="text-4xl font-display font-semibold tracking-tighter leading-none">{act.label}</span>
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          </div>
         )}
       </AnimatePresence>
 
-      {/* Desktop Sidebar */}
-      {!isMobile && (
-        <aside className={cn("fixed left-0 h-full w-56 bg-surface border-r border-white/8 flex flex-col py-8 z-50", isOffline ? "top-8" : "top-0")}>
-          <div className="px-6 mb-8 flex items-center gap-3">
-            <div className="w-10 h-10 bg-electric-blue/10 rounded-xl flex items-center justify-center border border-electric-blue/20 shrink-0">
-              <span className="text-electric-blue font-bold text-xl">N</span>
-            </div>
-            <span className="text-electric-blue font-bold text-xl tracking-tighter">NEXUS</span>
-          </div>
-          <nav className="flex-1 flex flex-col gap-1 px-3 overflow-y-auto scrollbar-hide">
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group relative shrink-0 w-full text-left",
-                  activeTab === item.id 
-                    ? "text-electric-blue bg-electric-blue/10 nav-active" 
-                    : "text-gray-muted hover:text-white hover:bg-white/5"
-                )}
-              >
-                <item.icon className={cn(
-                  "w-5 h-5 transition-all duration-300 shrink-0",
-                  activeTab === item.id && "drop-shadow-[0_0_8px_rgba(0,191,255,0.8)]"
-                )} />
-                <span className="text-sm font-medium transition-colors">
-                  {item.label}
-                </span>
-              </button>
-            ))}
-          </nav>
-        </aside>
-      )}
-
-      {/* Main Content Area */}
-      <div className={cn(
-        "flex-1 flex flex-col transition-all duration-300",
-        !isMobile ? "ml-56" : "mb-16",
-        isOffline ? "mt-8" : ""
-      )}>
-        {/* Top Bar */}
-        <header className="h-16 border-b border-white/8 bg-background/80 backdrop-blur-md sticky top-0 z-40 px-4 md:px-8 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {isMobile && <span className="text-electric-blue font-bold text-xl tracking-tighter">NEXUS</span>}
-          </div>
-          
-          <div className="hidden md:flex flex-col items-center">
-            <p className="text-sm font-medium">Good Morning, User — Monday, Apr 13</p>
-            <p className="text-xs text-gray-muted font-mono">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setIsCmdKOpen(true)}
-              className="hidden md:flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-1.5 rounded-lg text-sm text-gray-muted transition-colors"
-            >
-              <Search className="w-4 h-4" />
-              <span>Search...</span>
-              <kbd className="bg-white/10 px-1.5 py-0.5 rounded text-[10px] font-mono ml-2">⌘K</kbd>
-            </button>
-
-            <div className="relative">
-              <button 
-                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className="relative p-2 text-gray-muted hover:text-white transition-colors"
-              >
-                <motion.div
-                  animate={{ rotate: [0, -15, 15, -15, 15, 0] }}
-                  transition={{ duration: 0.5, delay: 2, repeat: Infinity, repeatDelay: 10 }}
-                >
-                  <Bell className="w-5 h-5" />
-                </motion.div>
-                <span className="absolute top-1 right-1 w-4 h-4 bg-red text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-background">3</span>
-              </button>
-
-              {/* Notification Center */}
-              <AnimatePresence>
-                {isNotificationsOpen && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 top-full mt-2 w-80 bg-surface/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
-                  >
-                    <div className="p-4 border-b border-white/10 flex items-center justify-between">
-                      <h3 className="font-bold">Notifications</h3>
-                      <button className="text-xs text-electric-blue hover:text-white transition-colors">Mark all read</button>
-                    </div>
-                    <div className="max-h-96 overflow-y-auto">
-                      <div className="p-2">
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-gray-muted px-2 py-1">Today</div>
-                        <div className="p-2 hover:bg-white/5 rounded-xl cursor-pointer flex gap-3 transition-colors group">
-                          <div className="w-8 h-8 rounded-full bg-red/20 flex items-center justify-center shrink-0">
-                            <div className="w-2 h-2 rounded-full bg-red" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Overdue Task</p>
-                            <p className="text-xs text-gray-muted">Update Portfolio README was due yesterday.</p>
-                          </div>
-                        </div>
-                        <div className="p-2 hover:bg-white/5 rounded-xl cursor-pointer flex gap-3 transition-colors group">
-                          <div className="w-8 h-8 rounded-full bg-electric-blue/20 flex items-center justify-center shrink-0">
-                            <Brain className="w-4 h-4 text-electric-blue" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">AI Suggestion</p>
-                            <p className="text-xs text-gray-muted">You have 2 hours of free time. Start 'Deep Work'?</p>
-                          </div>
-                        </div>
-                        <div className="p-2 hover:bg-white/5 rounded-xl cursor-pointer flex gap-3 transition-colors group">
-                          <div className="w-8 h-8 rounded-full bg-amber/20 flex items-center justify-center shrink-0">
-                            <Flame className="w-4 h-4 text-amber" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Streak at Risk</p>
-                            <p className="text-xs text-gray-muted">Complete your daily Pomodoro to keep the 8-day streak!</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-2 border-t border-white/5">
-                        <div className="text-[10px] font-bold uppercase tracking-widest text-gray-muted px-2 py-1">Earlier</div>
-                        <div className="p-2 hover:bg-white/5 rounded-xl cursor-pointer flex gap-3 transition-colors group opacity-70">
-                          <div className="w-8 h-8 rounded-full bg-emerald-green/20 flex items-center justify-center shrink-0">
-                            <Briefcase className="w-4 h-4 text-emerald-green" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Job Goal Met</p>
-                            <p className="text-xs text-gray-muted">You applied to 5 jobs yesterday. Great work!</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <div className="w-8 h-8 rounded-full bg-surface border border-white/10 flex items-center justify-center overflow-hidden">
-              <User className="w-5 h-5 text-gray-muted" />
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto p-4 md:p-8">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeTab}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.2 }}
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </main>
-      </div>
-
-      {/* Command Palette Modal */}
+      {/* Search Protocol */}
       <AnimatePresence>
         {isCmdKOpen && (
-          <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[10vh] px-4">
+          <div className="fixed inset-0 z-[200] flex items-start justify-center pt-[15vh] px-4">
             <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }} 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setIsCmdKOpen(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-zenith-text/30 backdrop-blur-xl"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }} 
-              animate={{ opacity: 1, scale: 1, y: 0 }} 
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-2xl bg-surface/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+              initial={{ opacity: 0, y: -40, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -40, scale: 0.97 }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="relative w-full max-w-3xl glass-surface p-3 shadow-2xl border-white/10 rounded-[3rem]"
             >
-              <div className="flex items-center px-4 py-4 border-b border-white/10">
-                <Search className="w-5 h-5 text-gray-muted mr-3" />
+              <div className="flex items-center gap-6 p-8 border-b border-white/5">
+                <Search className="w-8 h-8 text-white/20" />
                 <input 
                   autoFocus
-                  type="text" 
-                  placeholder="Search commands, tasks, or ask AI..." 
-                  value={cmdKSearch}
-                  onChange={(e) => setCmdKSearch(e.target.value)}
-                  className="flex-1 bg-transparent border-none outline-none text-lg placeholder:text-gray-muted"
+                  type="text"
+                  placeholder="Execute system search..."
+                  className="flex-1 bg-transparent border-none outline-none text-4xl font-display font-light placeholder:text-white/5 text-white italic tracking-tighter"
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
                 />
-                <kbd className="bg-white/10 px-2 py-1 rounded text-xs font-mono text-gray-muted">ESC</kbd>
+                <div className="flex items-center gap-2">
+                   <kbd className="px-5 py-2 glass-surface border-white/10 text-xs font-mono text-white/40 font-bold uppercase tracking-widest">ESC</kbd>
+                </div>
               </div>
-              <div className="p-2 max-h-[60vh] overflow-y-auto">
-                <div className="px-3 py-2 text-xs font-bold uppercase tracking-widest text-gray-muted">Quick Actions</div>
-                <button onClick={() => { setIsCmdKOpen(false); onOpenTaskModal('manual'); }} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-white/5 rounded-xl transition-colors text-left group">
-                  <div className="w-8 h-8 rounded-lg bg-electric-blue/20 flex items-center justify-center"><Plus className="w-4 h-4 text-electric-blue" /></div>
-                  <span className="flex-1 font-medium group-hover:text-electric-blue transition-colors">Add New Task</span>
-                  <kbd className="bg-white/5 px-2 py-1 rounded text-xs font-mono text-gray-muted">T</kbd>
-                </button>
-                <button onClick={() => { setIsCmdKOpen(false); setActiveTab('timer'); }} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-white/5 rounded-xl transition-colors text-left group">
-                  <div className="w-8 h-8 rounded-lg bg-amber/20 flex items-center justify-center"><TimerIcon className="w-4 h-4 text-amber" /></div>
-                  <span className="flex-1 font-medium group-hover:text-amber transition-colors">Start Pomodoro</span>
-                  <kbd className="bg-white/5 px-2 py-1 rounded text-xs font-mono text-gray-muted">P</kbd>
-                </button>
-                <button onClick={() => { setIsCmdKOpen(false); setActiveTab('health'); }} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-white/5 rounded-xl transition-colors text-left group">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-green/20 flex items-center justify-center"><Droplets className="w-4 h-4 text-emerald-green" /></div>
-                  <span className="flex-1 font-medium group-hover:text-emerald-green transition-colors">Log Water</span>
-                  <kbd className="bg-white/5 px-2 py-1 rounded text-xs font-mono text-gray-muted">W</kbd>
-                </button>
-                <button onClick={() => { setIsCmdKOpen(false); setActiveTab('ai'); }} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-white/5 rounded-xl transition-colors text-left group">
-                  <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center"><Brain className="w-4 h-4 text-purple-500" /></div>
-                  <span className="flex-1 font-medium group-hover:text-purple-500 transition-colors">Open NEXUS AI</span>
-                  <kbd className="bg-white/5 px-2 py-1 rounded text-xs font-mono text-gray-muted">A</kbd>
-                </button>
-
-                <div className="px-3 py-2 mt-2 text-xs font-bold uppercase tracking-widest text-gray-muted border-t border-white/5 pt-4">Recent Tasks</div>
-                <button onClick={() => { setIsCmdKOpen(false); setActiveTab('tasks'); }} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-white/5 rounded-xl transition-colors text-left group">
-                  <CheckSquare className="w-4 h-4 text-gray-muted group-hover:text-white" />
-                  <span className="flex-1 text-sm text-gray-300 group-hover:text-white">Review Q2 Strategy</span>
-                  <span className="text-xs bg-p1/20 text-p1 px-2 py-0.5 rounded">P1</span>
-                </button>
-                <button onClick={() => { setIsCmdKOpen(false); setActiveTab('tasks'); }} className="w-full flex items-center gap-3 px-3 py-3 hover:bg-white/5 rounded-xl transition-colors text-left group">
-                  <CheckSquare className="w-4 h-4 text-gray-muted group-hover:text-white" />
-                  <span className="flex-1 text-sm text-gray-300 group-hover:text-white">Morning Workout</span>
-                  <span className="text-xs bg-p2/20 text-p2 px-2 py-0.5 rounded">P2</span>
-                </button>
+              <div className="p-4 max-h-[60vh] overflow-y-auto scrollbar-hide">
+                <div className="flex items-center gap-3 p-6 text-[10px] uppercase tracking-[0.5em] font-mono text-zenith-emerald font-bold mb-4">
+                  <Navigation2 className="w-4 h-4" /> Strategic Roadmap Nodes
+                </div>
+                {NAV_ITEMS.map(node => (
+                  <button 
+                    key={node.id}
+                    onClick={() => { setActiveTab(node.id); setIsCmdKOpen(false); }}
+                    className="w-full flex items-center justify-between p-8 hover:bg-white/5 rounded-[2.5rem] transition-all group text-left border border-transparent hover:border-white/10"
+                  >
+                    <div className="flex items-center gap-8">
+                       <div className="p-5 glass-surface border-white/5 rounded-2xl group-hover:bg-zenith-emerald group-hover:border-zenith-emerald transition-all duration-500">
+                          <node.icon className="w-7 h-7 text-white/40 group-hover:text-black transition-colors" />
+                       </div>
+                       <div className="flex flex-col">
+                          <span className="text-[10px] font-mono text-white/20 uppercase tracking-[0.4em] font-bold mb-1">System Module</span>
+                          <span className="text-2xl font-display font-semibold text-white group-hover:text-zenith-emerald transition-colors italic tracking-tight">{node.label} Interface</span>
+                       </div>
+                    </div>
+                    <span className="text-[10px] font-mono p-3 px-6 glass-surface border-white/5 opacity-0 group-hover:opacity-100 uppercase tracking-widest font-bold text-white/40 transition-all rounded-full">INITIALIZE</span>
+                  </button>
+                ))}
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-
-      {/* FAB Button */}
-      <div className="fixed bottom-20 right-6 md:bottom-8 md:right-8 z-50">
-        <AnimatePresence>
-          {isFabOpen && (
-            <div className="flex flex-col gap-3 mb-4 items-end">
-              <motion.button
-                initial={{ opacity: 0, scale: 0.5, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.5, y: 20 }}
-                transition={{ delay: 0.1 }}
-                onClick={() => { onOpenTaskModal('manual'); setIsFabOpen(false); }}
-                className="flex items-center gap-2 bg-surface border border-white/8 px-4 py-2 rounded-xl shadow-xl hover:bg-white/5 transition-colors"
-              >
-                <span className="text-sm font-medium">✏️ Add Manually</span>
-                <Edit3 className="w-4 h-4 text-electric-blue" />
-              </motion.button>
-              <motion.button
-                initial={{ opacity: 0, scale: 0.5, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.5, y: 20 }}
-                transition={{ delay: 0.05 }}
-                onClick={() => { onOpenTaskModal('scan'); setIsFabOpen(false); }}
-                className="flex items-center gap-2 bg-surface border border-white/8 px-4 py-2 rounded-xl shadow-xl hover:bg-white/5 transition-colors"
-              >
-                <span className="text-sm font-medium">📷 Scan / Photo</span>
-                <Camera className="w-4 h-4 text-electric-blue" />
-              </motion.button>
-              <motion.button
-                initial={{ opacity: 0, scale: 0.5, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.5, y: 20 }}
-                onClick={() => { onOpenTaskModal('voice'); setIsFabOpen(false); }}
-                className="flex items-center gap-2 bg-surface border border-white/8 px-4 py-2 rounded-xl shadow-xl hover:bg-white/5 transition-colors"
-              >
-                <span className="text-sm font-medium">🎙️ Voice Input</span>
-                <Mic className="w-4 h-4 text-electric-blue" />
-              </motion.button>
-            </div>
-          )}
-        </AnimatePresence>
-        <button
-          onClick={() => setIsFabOpen(!isFabOpen)}
-          className="w-14 h-14 rounded-full bg-electric-blue text-background flex items-center justify-center shadow-[0_0_20px_rgba(0,191,255,0.4)] transition-transform hover:scale-110 active:scale-95"
-        >
-          <motion.div
-            animate={{ rotate: isFabOpen ? 45 : 0 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-          >
-            <Plus className="w-8 h-8" />
-          </motion.div>
-        </button>
-      </div>
-
-      {/* Mobile Bottom Nav */}
-      {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 h-16 bg-surface/80 backdrop-blur-lg border-t border-white/8 flex items-center justify-around px-2 z-50">
-          {NAV_ITEMS.slice(0, 5).map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={cn(
-                "flex flex-col items-center justify-center gap-1 transition-all duration-300",
-                activeTab === item.id ? "text-electric-blue" : "text-gray-muted"
-              )}
-            >
-              <item.icon className={cn(
-                "w-5 h-5",
-                activeTab === item.id && "drop-shadow-[0_0_8px_rgba(0,191,255,0.8)]"
-              )} />
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </button>
-          ))}
-        </nav>
-      )}
     </div>
   );
 }

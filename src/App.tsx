@@ -28,22 +28,34 @@ export default function App() {
   const [initialTaskTab, setInitialTaskTab] = useState<'manual' | 'scan' | 'voice'>('manual');
   const [editingTask, setEditingTask] = useState<any>(null);
   const [viewingTask, setViewingTask] = useState<any>(null);
-  const [tasks, setTasks] = useState([
-    { id: '1', title: 'Review Q2 Strategy', priority: 'P1', category: 'Work', time: '1h', status: 'todo', date: new Date().toISOString().split('T')[0] },
-    { id: '2', title: 'Morning Workout', priority: 'P2', category: 'Health', time: '45m', status: 'in-progress', date: new Date().toISOString().split('T')[0] },
-    { id: '3', title: 'Update Personal OS', priority: 'P3', category: 'Side Project', time: '2h', status: 'todo', date: new Date(Date.now() + 86400000).toISOString().split('T')[0] },
-    { id: '4', title: 'Buy Groceries', priority: 'P4', category: 'Personal', time: '30m', status: 'done', date: new Date().toISOString().split('T')[0] },
-    { id: '5', title: 'Weekly Planning', priority: 'P2', category: 'Personal', time: '1h', status: 'todo', date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0] },
-  ]);
+  const [tasks, setTasks] = useState(() => {
+    const saved = localStorage.getItem('nexus_tasks');
+    if (saved) return JSON.parse(saved);
+    return [
+      { id: '1', title: 'Review Q2 Strategy', priority: 'P1', category: 'Work', time: '1h', status: 'todo', date: new Date().toISOString().split('T')[0] },
+      { id: '2', title: 'Morning Workout', priority: 'P2', category: 'Health', time: '45m', status: 'in-progress', date: new Date().toISOString().split('T')[0] },
+      { id: '3', title: 'Update Personal OS', priority: 'P3', category: 'Side Project', time: '2h', status: 'todo', date: new Date(Date.now() + 86400000).toISOString().split('T')[0] },
+      { id: '4', title: 'Buy Groceries', priority: 'P4', category: 'Personal', time: '30m', status: 'done', date: new Date().toISOString().split('T')[0] },
+      { id: '5', title: 'Weekly Planning', priority: 'P2', category: 'Personal', time: '1h', status: 'todo', date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0] },
+    ];
+  });
 
-  const todayTasks = tasks.filter(t => t.date === new Date().toISOString().split('T')[0] || !t.date);
+  useEffect(() => {
+    localStorage.setItem('nexus_tasks', JSON.stringify(tasks));
+  }, [tasks]);
+
+  const todayTasks = tasks.filter((t: any) => t.date === new Date().toISOString().split('T')[0] || !t.date);
+
+  const handleDeleteTask = (taskId: string) => {
+    setTasks(prev => prev.filter(t => t.id !== taskId));
+  };
 
   const handleOpenTaskModal = (tabOrTask: 'manual' | 'scan' | 'voice' | any = 'manual') => {
-    if (typeof tabOrTask === 'object') {
+    if (typeof tabOrTask === 'object' && tabOrTask !== null && 'id' in tabOrTask) {
       setInitialTaskTab('manual');
       setEditingTask(tabOrTask);
     } else {
-      setInitialTaskTab(tabOrTask);
+      setInitialTaskTab(tabOrTask as any);
       setEditingTask(null);
     }
     setIsTaskModalOpen(true);
@@ -74,6 +86,7 @@ export default function App() {
         return (
           <Dashboard 
             tasks={todayTasks}
+            onSaveTask={handleSaveTask}
             onNavigateToAI={() => setActiveTab('ai')} 
             onNavigateToHealth={() => setActiveTab('health')}
             onNavigateToCareer={() => setActiveTab('career')}
@@ -91,7 +104,7 @@ export default function App() {
       case 'timer':
         return <Timer />;
       case 'tasks':
-        return <Tasks tasks={tasks} onViewTask={handleViewTask} onOpenTaskModal={handleOpenTaskModal} />;
+        return <Tasks tasks={tasks} onViewTask={handleViewTask} onDeleteTask={handleDeleteTask} onOpenTaskModal={handleOpenTaskModal} />;
       case 'analytics':
         return <Analytics />;
       case 'goals':

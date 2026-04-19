@@ -1,111 +1,166 @@
 import React, { useState } from 'react';
-import { GlassCard, Button } from './UI';
-import { Brain, Upload, FileText, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
+import { GlassCard, Button, TechnicalLabel, Badge } from './UI';
+import { Brain, Upload, FileText, Loader2, Sparkles, CheckCircle2, Cpu, Terminal } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/src/lib/utils';
+import { processRosterAI } from '@/src/services/geminiService';
 
-export default function RosterInput() {
+interface RosterInputProps {
+  onSaveTask?: (task: any) => void;
+}
+
+export default function RosterInput({ onSaveTask }: RosterInputProps) {
   const [input, setInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<any[] | null>(null);
 
-  const processRoster = () => {
+  const processRoster = async () => {
+    if (!input.trim()) return;
     setIsProcessing(true);
-    // Simulate AI processing
-    setTimeout(() => {
-      setResult([
-        { time: '09:00', task: 'Morning Standup', priority: 'P1', category: 'Work' },
-        { time: '10:30', task: 'Deep Work: Project Alpha', priority: 'P1', category: 'Work' },
-        { time: '13:00', task: 'Lunch & Recovery', priority: 'P3', category: 'Health' },
-        { time: '14:00', task: 'Client Review Meeting', priority: 'P2', category: 'Work' },
-        { time: '16:30', task: 'Email Triage', priority: 'P3', category: 'Work' },
-      ]);
+    try {
+      const tasks = await processRosterAI(input);
+      setResult(tasks);
+    } catch (e) {
+      console.error("Roster parsing failed:", e);
+    } finally {
       setIsProcessing(false);
-    }, 2500);
+    }
+  };
+
+  const handleAddAll = () => {
+    if (!result || !onSaveTask) return;
+    
+    result.forEach(item => {
+      onSaveTask({
+        id: Math.random().toString(36).substr(2, 9),
+        title: item.task,
+        priority: item.priority || 'P3',
+        category: item.category || 'Work',
+        date: new Date().toISOString().split('T')[0],
+        status: 'todo',
+        description: `Scheduled for ${item.time}`
+      });
+    });
+    
+    setResult(null);
+    setInput("");
   };
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
-          <FileText className="w-6 h-6 text-purple-400" />
+    <div className="space-y-16">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-10 border-b border-white/5 pb-12">
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="h-0.5 w-8 bg-zenith-emerald" />
+            <span className="text-[10px] font-mono text-zenith-emerald uppercase tracking-[0.4em] font-bold">Neural Ingestion Protocol</span>
+          </div>
+          <h2 className="text-7xl font-display font-semibold text-white tracking-tighter leading-none italic">
+            Strategic <span className="text-white/20 not-italic">Synthesis.</span>
+          </h2>
         </div>
-        <div>
-          <h2 className="text-xl font-bold">Work Roster Optimizer</h2>
-          <p className="text-xs text-gray-muted uppercase tracking-widest font-bold">AI-Powered Schedule Generation</p>
+        <div className="hidden lg:block">
+           <div className="w-24 h-24 rounded-[2.5rem] glass-surface border-white/5 flex items-center justify-center rotate-12 group hover:rotate-0 transition-transform duration-1000">
+              <Terminal className="w-10 h-10 text-white/20 group-hover:text-white" />
+           </div>
         </div>
       </header>
 
       {!result ? (
-        <GlassCard className="p-6 space-y-6">
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-widest text-gray-muted">Paste your roster or shift details</label>
+        <div className="interactive-pane p-12 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none group-hover:scale-150 transition-transform duration-1000 rotate-12">
+             <Cpu className="w-48 h-48 text-white" />
+          </div>
+          
+          <div className="space-y-8 relative z-10">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+               <div className="space-y-3">
+                  <label className="text-[10px] font-mono text-white/20 uppercase tracking-[0.4em] font-bold ml-2">Unstructured Operational Log</label>
+                  <p className="text-xl font-display font-light text-white/40 italic">Decrypting textual intent into strategic nodes...</p>
+               </div>
+            </div>
+            
             <textarea 
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="e.g. Monday: 9am-5pm. Meetings at 10am and 2pm. Need to finish the report by EOD."
-              className="w-full bg-surface border border-white/8 rounded-2xl p-4 min-h-[150px] focus:outline-none focus:border-purple-500/50 transition-colors resize-none text-sm"
+              placeholder="e.g. MISSION_RECON AT 0900. SYNC WITH COMMAND AT 1430..."
+              className="w-full bg-transparent border-2 border-white/5 rounded-[3rem] p-12 min-h-[300px] focus:outline-none focus:border-white/20 transition-all resize-none text-3xl font-display font-light text-white tracking-tight placeholder:text-white/5 italic focus:not-italic"
             />
           </div>
 
-          <div className="flex gap-4">
-            <Button variant="secondary" className="flex-1 py-4 gap-2">
-              <Upload className="w-4 h-4" /> Upload PDF/Image
+          <div className="flex flex-col md:flex-row gap-8 relative z-10 pt-12">
+            <Button variant="outline" className="h-20 flex-1 gap-6 border-white/5 text-white/40 hover:text-white hover:border-white rounded-[2rem] uppercase font-mono text-[10px] tracking-[0.4em] font-black">
+              <Upload className="w-6 h-6" /> 
+              TELEMETRY_UPLOAD
             </Button>
             <Button 
               onClick={processRoster}
               disabled={!input.trim() || isProcessing}
-              className="flex-1 py-4 gap-2 relative overflow-hidden group"
+              variant="zenith-emerald"
+              className="h-20 flex-1 gap-6 rounded-[2rem] text-xl font-display font-bold shadow-[0_0_30px_rgba(0,245,160,0.1)]"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-electric-blue opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="relative flex items-center justify-center gap-2">
-                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Brain className="w-4 h-4" />}
-                <span>Generate Smart Todo List</span>
-              </div>
+              {isProcessing ? <Loader2 className="w-6 h-6 animate-spin" /> : <Brain className="w-6 h-6" />}
+              EXECUTE_NEURAL_MAPPING
             </Button>
           </div>
-        </GlassCard>
+          
+          <div className="mt-12 pt-8 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-white/20 tracking-[0.4em]">
+             <div className="flex items-center gap-4">
+                <Sparkles className="w-4 h-4 text-zenith-emerald animate-pulse" />
+                <span className="font-bold">COGNITIVE_CORE_ONLINE</span>
+             </div>
+             <div className="flex items-center gap-10">
+                <span className="font-bold">UPTIME: 99.9%</span>
+                <span className="font-bold">LATENCY: 0.04ms</span>
+             </div>
+          </div>
+        </div>
       ) : (
         <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="space-y-4"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-12"
         >
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-emerald-green flex items-center gap-2">
-              <Sparkles className="w-4 h-4" /> Optimized Schedule Ready
-            </h3>
-            <button onClick={() => setResult(null)} className="text-xs text-gray-muted hover:text-white transition-colors">Reset</button>
+          <div className="flex items-center justify-between border-b border-white/5 pb-8">
+            <div className="flex items-center gap-6">
+               <div className="relative">
+                  <div className="absolute inset-0 bg-zenith-emerald/30 blur-xl animate-pulse" />
+                  <CheckCircle2 className="w-8 h-8 text-zenith-emerald relative z-10" />
+               </div>
+               <h3 className="text-sm font-mono font-bold uppercase tracking-[0.5em] text-zenith-emerald">
+                 Synthesis Manifold Optimized
+               </h3>
+            </div>
+            <button onClick={() => setResult(null)} className="text-[10px] font-mono text-white/20 hover:text-white transition-all border-b border-white/10 uppercase tracking-[0.4em] font-bold">Resync_Base</button>
           </div>
 
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-6">
             {result.map((item, i) => (
               <motion.div 
                 key={i}
-                initial={{ opacity: 0, x: -20 }}
+                initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="flex items-center gap-4 bg-surface border border-white/8 p-4 rounded-2xl group hover:border-purple-500/30 transition-all"
+                transition={{ delay: i * 0.08 }}
+                className="interactive-pane p-10 flex items-center gap-12 group hover:scale-[1.01] transition-all duration-700"
               >
-                <div className="text-xs font-mono font-bold text-purple-400 w-12">{item.time}</div>
-                <div className="flex-1">
-                  <h4 className="text-sm font-bold">{item.task}</h4>
-                  <p className="text-[10px] text-gray-muted uppercase tracking-widest">{item.category}</p>
+                <div className="flex flex-col items-center gap-2 w-24 border-r border-white/5">
+                   <span className="text-[10px] font-mono text-white/20 uppercase font-black">Time</span>
+                   <span className="text-2xl font-display font-black text-white italic group-hover:not-italic group-hover:text-zenith-emerald transition-all">{item.time || '--:--'}</span>
                 </div>
-                <div className={cn(
-                  "px-2 py-0.5 rounded text-[10px] font-bold border",
-                  item.priority === 'P1' ? "border-p1/20 text-p1 bg-p1/5" :
-                  item.priority === 'P2' ? "border-p2/20 text-p2 bg-p2/5" :
-                  "border-p3/20 text-p3 bg-p3/5"
-                )}>
-                  {item.priority}
+                <div className="flex-1 space-y-2">
+                  <h4 className="text-4xl font-display font-semibold text-white tracking-tight leading-tight">{item.task}</h4>
+                  <p className="text-[10px] font-mono text-white/20 uppercase tracking-[0.4em] font-bold">{item.category} Sector</p>
                 </div>
+                <Badge priority={item.priority || 'P3'}>{item.priority}</Badge>
               </motion.div>
             ))}
           </div>
 
-          <Button className="w-full py-4 gap-2 shadow-[0_0_20px_rgba(168,85,247,0.3)]">
-            <CheckCircle2 className="w-5 h-5" /> Add All to My Day
+          <Button 
+            onClick={handleAddAll}
+            variant="zenith-emerald"
+            className="w-full h-24 rounded-[3rem] text-3xl font-display font-black tracking-tighter shadow-[0_0_50px_rgba(0,245,160,0.2)]"
+          >
+            COMMIT_TO_ACTIVE_REGISTRY
           </Button>
         </motion.div>
       )}

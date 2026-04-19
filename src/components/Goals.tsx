@@ -1,218 +1,253 @@
 import React, { useState } from 'react';
-import { GlassCard, Button } from './UI';
-import { Plus, Flame, HeartCrack, ChevronDown, ChevronUp, MoreVertical, CheckSquare, Square, Target } from 'lucide-react';
+import { GlassCard, Button, Badge, ProgressBar, TechnicalLabel, Modal } from './UI';
+import { Plus, Flame, HeartCrack, ChevronDown, ChevronUp, MoreVertical, Target, Sparkles, Navigation2 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
 const STREAKS = [
-  { id: 1, name: 'Daily Water Goal', active: true, current: 12, best: 15, icon: '💧' },
-  { id: 2, name: 'Job Applications', active: true, current: 5, best: 14, icon: '💼' },
-  { id: 3, name: '6+ hrs Sleep', active: false, current: 0, best: 21, icon: '😴' },
-  { id: 4, name: 'Pomodoro Daily', active: true, current: 8, best: 8, icon: '🍅' },
-  { id: 5, name: 'Exercise', active: true, current: 3, best: 45, icon: '🏃' },
+  { id: 1, name: 'Bio-Hydration', active: true, current: 12, best: 15, icon: '💧' },
+  { id: 2, name: 'Career Ops', active: true, current: 5, best: 14, icon: '💼' },
+  { id: 3, name: 'Deep Recovery', active: false, current: 0, best: 21, icon: '😴' },
 ];
 
 const INITIAL_GOALS = [
   {
     id: 1,
-    title: 'Land Senior Frontend Role',
+    title: 'Senior Domain Authority',
     category: 'Career',
     progress: 12,
     target: 100,
-    unit: 'jobs applied',
-    targetDate: '2026-06-01',
+    unit: 'Applications',
     daysRemaining: 48,
-    milestones: [
-      { id: 11, title: 'Update Resume & Portfolio', completed: true, date: 'Apr 1' },
-      { id: 12, title: 'Apply to 10 jobs', completed: true, date: 'Apr 5' },
-      { id: 13, title: 'Apply to 25 jobs', completed: false, date: 'Apr 20' },
-      { id: 14, title: 'Complete 5 mock interviews', completed: false, date: 'May 10' },
-    ]
+    status: 'ACTIVE'
   },
   {
     id: 2,
-    title: 'Run a Half Marathon',
+    title: 'Kinetic Endurance',
     category: 'Health',
     progress: 65,
     target: 100,
-    unit: '% training plan',
-    targetDate: '2026-07-15',
+    unit: 'Training Nodes',
     daysRemaining: 92,
-    milestones: [
-      { id: 21, title: 'Run 5k without stopping', completed: true, date: 'Mar 15' },
-      { id: 22, title: 'Run 10k under 1 hour', completed: true, date: 'Apr 10' },
-      { id: 23, title: 'Complete 15k long run', completed: false, date: 'May 20' },
-    ]
+    status: 'ACTIVE'
   }
 ];
 
 export default function Goals() {
-  const [goals, setGoals] = useState(INITIAL_GOALS);
-  const [expandedGoal, setExpandedGoal] = useState<number | null>(null);
+  const [goals, setGoals] = useState(() => {
+    const saved = localStorage.getItem('nexus_goals');
+    return saved ? JSON.parse(saved) : INITIAL_GOALS;
+  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const [newGoal, setNewGoal] = useState({
+    title: '',
+    category: 'Career',
+    target: 100,
+    unit: 'units',
+    targetDate: ''
+  });
 
-  const toggleMilestone = (goalId: number, milestoneId: number) => {
-    setGoals(prev => prev.map(goal => {
-      if (goal.id !== goalId) return goal;
-      
-      const newMilestones = goal.milestones.map(m => 
-        m.id === milestoneId ? { ...m, completed: !m.completed } : m
-      );
-      
-      // Recalculate progress based on milestones (simplified for demo)
-      const completedCount = newMilestones.filter(m => m.completed).length;
-      const newProgress = Math.round((completedCount / newMilestones.length) * goal.target);
+  const saveGoals = (updatedGoals: any) => {
+    setGoals(updatedGoals);
+    localStorage.setItem('nexus_goals', JSON.stringify(updatedGoals));
+  };
 
-      return { ...goal, milestones: newMilestones, progress: newProgress };
-    }));
+  const handleCreateGoal = () => {
+    if (!newGoal.title) return;
+    const goal = {
+      ...newGoal,
+      id: Date.now(),
+      progress: 0,
+      daysRemaining: 90,
+      status: 'PLANNING'
+    };
+    saveGoals([goal, ...goals]);
+    setIsModalOpen(false);
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Goals & Streaks</h1>
-          <p className="text-gray-muted mt-1">Track your habits and long-term objectives.</p>
+    <div className="space-y-32 pb-32">
+      
+      {/* Strategic Vision Header */}
+      <header className="relative pt-16 pb-12">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 blur-[140px] rounded-full pointer-events-none" />
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-12">
+          <div className="space-y-8">
+            <div className="flex items-center gap-6">
+               <div className="h-[1px] w-12 bg-zenith-emerald" />
+               <span className="text-[10px] font-mono font-bold uppercase tracking-[0.5em] text-zenith-emerald shadow-[0_0_10px_rgba(0,245,160,0.3)]">Mission Control</span>
+            </div>
+            <h1 className="text-[8rem] md:text-[12rem] font-display font-semibold text-white tracking-tighter leading-none">
+               Strategic <br /><span className="text-white/20 italic">Layer.</span>
+            </h1>
+          </div>
+          <Button 
+            variant="zenith-emerald" 
+            size="lg"
+            onClick={() => setIsModalOpen(true)} 
+            className="rounded-full px-12 h-20 text-xl font-display font-bold shadow-[0_0_30px_rgba(0,245,160,0.2)] hover:shadow-[0_0_50px_rgba(0,245,160,0.4)] transition-all"
+          >
+            <Plus className="w-6 h-6 mr-4" />
+            INITIALIZE MISSION
+          </Button>
         </div>
-        <Button className="gap-2 shadow-[0_0_20px_rgba(0,191,255,0.3)] shrink-0">
-          <Plus className="w-4 h-4" /> New Goal
-        </Button>
       </header>
 
-      {/* Active Streaks Row */}
-      <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-        {STREAKS.map(streak => (
-          <GlassCard key={streak.id} className="min-w-[160px] p-4 flex flex-col items-center text-center shrink-0">
-            <div className="text-2xl mb-2">{streak.icon}</div>
-            <h4 className="text-xs font-bold uppercase tracking-widest text-gray-muted mb-3 h-8 flex items-center justify-center">{streak.name}</h4>
-            
-            <div className="flex items-center gap-2 mb-2">
-              {streak.active ? (
-                <motion.div
-                  animate={{ scale: [1, 1.3, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <Flame className="w-5 h-5 text-amber" />
-                </motion.div>
-              ) : (
-                <HeartCrack className="w-5 h-5 text-gray-muted" />
-              )}
-              <span className={cn("font-bold", streak.active ? "text-amber" : "text-gray-muted")}>
-                {streak.active ? `Day ${streak.current}` : 'Broken'}
-              </span>
+      {/* Persistence Matrix (Streaks) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+        {STREAKS.map((streak) => (
+          <div key={streak.id} className="glass-surface p-12 relative overflow-hidden group hover:scale-[1.02] transition-all duration-700">
+            <div className="absolute -right-12 -bottom-12 opacity-5 grayscale group-hover:opacity-10 transition-opacity transform group-hover:scale-150 rotate-12 duration-1000">
+              <span className="text-[15rem] leading-none">{streak.icon}</span>
             </div>
             
-            <div className="text-[10px] bg-white/5 px-2 py-1 rounded-md text-gray-muted w-full">
-              Best: {streak.best} days
+            <div className="flex items-center justify-between mb-12 relative z-10">
+               <span className="text-[10px] font-mono font-bold text-white/30 uppercase tracking-[0.4em]">{streak.name}</span>
+               {streak.active ? (
+                 <div className="relative">
+                    <div className="absolute inset-0 bg-zenith-emerald/40 blur-xl animate-pulse" />
+                    <Flame className="w-8 h-8 text-zenith-emerald relative z-10" />
+                 </div>
+               ) : (
+                 <HeartCrack className="w-8 h-8 text-white/10" />
+               )}
             </div>
-          </GlassCard>
+
+            <div className="flex items-end gap-6 mb-8 relative z-10">
+               <span className={cn("text-9xl font-display font-bold tracking-tighter leading-none", streak.active ? "text-white" : "text-white/20")}>
+                 {streak.current}
+               </span>
+               <div className="mb-4">
+                 <p className="text-[10px] font-mono text-white/20 uppercase tracking-[0.2em] font-bold">Current_Cycle</p>
+               </div>
+            </div>
+            <div className="pt-8 border-t border-white/5">
+              <TechnicalLabel label="Operational Peak" value={`${streak.best} CYCLES`} color="text-zenith-emerald" />
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* Goals Section */}
-      <div className="space-y-4">
-        {goals.map(goal => (
-          <GlassCard key={goal.id} className="p-0 overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-xl font-bold">{goal.title}</h3>
-                    <span className="text-[10px] bg-white/10 px-2 py-1 rounded-md text-gray-muted uppercase tracking-widest">
-                      {goal.category}
-                    </span>
+      {/* Mission Log */}
+      <div className="space-y-16">
+        <div className="flex items-center gap-10">
+           <h2 className="text-sm font-mono font-bold uppercase tracking-[0.6em] text-white/20 whitespace-nowrap">
+              Active Initiative Pipeline
+           </h2>
+           <div className="h-[1px] flex-1 bg-white/5" />
+        </div>
+
+        <div className="grid grid-cols-1 gap-12">
+          {goals.map((goal: any) => (
+            <div key={goal.id} className="interactive-pane p-16 group relative overflow-hidden">
+              <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-20">
+                
+                <div className="flex-1 space-y-10">
+                  <div className="flex items-start gap-10">
+                    <div className="w-24 h-24 rounded-[2.5rem] glass-surface flex items-center justify-center border-white/10 group-hover:border-zenith-emerald/50 transition-colors">
+                       <Target className="w-12 h-12 text-white/20 group-hover:text-zenith-emerald transition-colors animate-pulse" />
+                    </div>
+                    <div className="space-y-4">
+                       <p className="text-[10px] font-mono text-zenith-emerald uppercase tracking-[0.5em] font-bold">{goal.category} SECTOR</p>
+                       <h3 className="text-7xl font-display font-semibold text-white tracking-tighter leading-tight italic group-hover:not-italic transition-all duration-700">{goal.title}</h3>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-sm text-gray-muted">
-                    <span className="flex items-center gap-1">
-                      <Target className="w-4 h-4" /> {goal.progress} / {goal.target} {goal.unit}
-                    </span>
-                    <span>•</span>
-                    <span className={cn(
-                      "px-2 py-0.5 rounded-md text-xs font-medium",
-                      goal.daysRemaining < 30 ? "bg-amber/20 text-amber" : "bg-white/5 text-gray-300"
-                    )}>
-                      {goal.daysRemaining} days left (Target: {goal.targetDate})
-                    </span>
+                  
+                  <div className="flex flex-wrap gap-12 pt-4">
+                     <TechnicalLabel label="Linear Status" value={goal.status} color="text-zenith-emerald" />
+                     <TechnicalLabel label="Operational Window" value={`${goal.daysRemaining} SECONDS_UNTIL_EOF`} color="text-white/40" />
+                     <TechnicalLabel label="Cumulative Capacity" value={`${goal.progress}/${goal.target} ${goal.unit.toUpperCase()}`} />
                   </div>
                 </div>
-                <button className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-muted">
-                  <MoreVertical className="w-5 h-5" />
-                </button>
+
+                <div className="w-full xl:w-[450px] space-y-8">
+                   <div className="flex justify-between items-end mb-4">
+                      <span className="text-xl font-display font-bold text-white italic tracking-tight">Sync Level</span>
+                      <span className="text-5xl font-display font-bold text-white tracking-tighter">{Math.round((goal.progress / goal.target) * 100)}%</span>
+                   </div>
+                   <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden p-1 glass-surface">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(goal.progress / goal.target) * 100}%` }}
+                        className="h-full bg-white rounded-full relative"
+                      >
+                         <div className="absolute inset-0 bg-white blur-md opacity-50" />
+                      </motion.div>
+                   </div>
+                   <Button variant="outline" size="lg" className="w-full h-16 rounded-2xl border-white/10 text-white/40 hover:text-white hover:border-white transition-all uppercase font-mono text-xs tracking-[0.4em] font-bold">Synchronize Nodes</Button>
+                </div>
               </div>
 
-              {/* Progress Bar */}
-              <div className="relative h-2 bg-white/5 rounded-full overflow-hidden mb-2">
-                <motion.div 
-                  className="absolute top-0 left-0 h-full bg-electric-blue shadow-[0_0_10px_rgba(0,191,255,0.5)]"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${(goal.progress / goal.target) * 100}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                />
+              {/* Data Infrastructure Lines */}
+              <div className="absolute bottom-0 right-0 p-12 pointer-events-none opacity-5 group-hover:opacity-20 transition-all duration-1000 rotate-180">
+                 <div className="flex gap-2">
+                    {[100, 160, 220, 280, 340].map((h, i) => (
+                      <div key={i} className="w-[1px] bg-white transition-all duration-1000" style={{ height: `${h}px` }} />
+                    ))}
+                 </div>
               </div>
-              <div className="flex justify-end">
-                <span className="text-xs font-bold text-electric-blue">
-                  {Math.round((goal.progress / goal.target) * 100)}%
-                </span>
-              </div>
-
-              {/* Expand Toggle */}
-              <button 
-                onClick={() => setExpandedGoal(expandedGoal === goal.id ? null : goal.id)}
-                className="mt-4 flex items-center gap-2 text-sm text-gray-muted hover:text-white transition-colors w-full justify-center py-2 border-t border-white/5"
-              >
-                {expandedGoal === goal.id ? (
-                  <><ChevronUp className="w-4 h-4" /> Hide Milestones</>
-                ) : (
-                  <><ChevronDown className="w-4 h-4" /> View Milestones</>
-                )}
-              </button>
             </div>
+          ))}
 
-            {/* Expanded Milestones */}
-            <AnimatePresence>
-              {expandedGoal === goal.id && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="bg-black/20 border-t border-white/5 px-6 py-4 space-y-3"
-                >
-                  {goal.milestones.map(milestone => (
-                    <div 
-                      key={milestone.id} 
-                      className="flex items-center gap-3 group cursor-pointer"
-                      onClick={() => toggleMilestone(goal.id, milestone.id)}
-                    >
-                      <button className={cn(
-                        "transition-colors",
-                        milestone.completed ? "text-emerald-green" : "text-gray-muted group-hover:text-electric-blue"
-                      )}>
-                        {milestone.completed ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
-                      </button>
-                      <span className={cn(
-                        "text-sm flex-1 transition-colors",
-                        milestone.completed ? "text-gray-muted line-through" : "text-gray-300"
-                      )}>
-                        {milestone.title}
-                      </span>
-                      <span className="text-xs text-gray-muted font-mono">
-                        {milestone.completed ? `done ${milestone.date}` : `target ${milestone.date}`}
-                      </span>
-                    </div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </GlassCard>
-        ))}
-
-        {/* Add Goal Button Card */}
-        <button className="w-full border-2 border-dashed border-white/10 rounded-2xl p-6 flex flex-col items-center justify-center text-gray-muted hover:text-electric-blue hover:border-electric-blue/50 hover:bg-electric-blue/5 transition-all group">
-          <div className="w-12 h-12 rounded-full bg-white/5 group-hover:bg-electric-blue/20 flex items-center justify-center mb-3 transition-colors">
-            <Plus className="w-6 h-6" />
-          </div>
-          <span className="font-bold">Add New Goal</span>
-        </button>
+          <button 
+             onClick={() => setIsModalOpen(true)}
+             className="w-full glass-surface border-dashed border-2 border-white/5 rounded-[4rem] p-32 flex flex-col items-center justify-center text-white/10 hover:text-zenith-emerald hover:border-zenith-emerald/30 hover:bg-zenith-emerald/5 transition-all group"
+          >
+             <Plus className="w-24 h-24 mb-10 group-hover:scale-125 transition-transform duration-700" />
+             <span className="text-5xl font-display font-light italic tracking-tighter">Initiate Strategic Roadmap Node</span>
+          </button>
+        </div>
       </div>
+
+      {/* Neural Synergy Card */}
+      <div className="glass-surface border-zenith-emerald/20 bg-zenith-emerald/[0.03] p-16 flex flex-col lg:flex-row items-center gap-20 transition-all group overflow-hidden relative">
+         <div className="absolute inset-0 bg-gradient-to-r from-zenith-emerald/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+         <div className="w-32 h-32 rounded-[3rem] glass-surface border-zenith-emerald/30 flex items-center justify-center relative z-10 scale-125 rotate-12 group-hover:rotate-0 transition-transform duration-1000">
+            <Sparkles className="w-16 h-16 text-zenith-emerald animate-pulse" />
+         </div>
+         <div className="relative z-10 flex-1 text-center lg:text-left space-y-4">
+            <div className="flex items-center gap-4 justify-center lg:justify-start">
+              <div className="h-1 w-8 bg-zenith-emerald rounded-full" />
+              <span className="text-[10px] font-mono text-zenith-emerald uppercase tracking-[0.5em] font-bold">Neural Synergy Advisor</span>
+            </div>
+            <p className="text-4xl font-display font-light text-white leading-tight tracking-tight max-w-4xl italic">
+               Velocity metrics are optimal. Reaching <span className="text-zenith-emerald font-bold not-italic">80% Kinetic Endurance</span> will trigger a projected +15% boost to cognitive task efficiency.
+            </p>
+         </div>
+         <Button variant="zenith-emerald" size="lg" className="relative z-10 rounded-full h-16 px-12 font-display font-bold tracking-tight">EXECUTE_STRATEGY</Button>
+      </div>
+
+      {/* New Objective Deployment Modal */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Mission Deployment">
+         <div className="space-y-12 py-10">
+            <div className="space-y-6">
+               <label className="text-[10px] font-mono text-white/30 uppercase tracking-[0.4em] font-bold ml-2">Mission_Designator</label>
+               <input 
+                 value={newGoal.title}
+                 onChange={e => setNewGoal({...newGoal, title: e.target.value})}
+                 placeholder="e.g. ESTABLISH_DOMAIN_AUTHORITY"
+                 className="w-full glass-surface border-white/10 rounded-3xl p-10 text-5xl font-display font-semibold focus:border-white outline-none placeholder:text-white/5 transition-all italic focus:not-italic"
+               />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+               <div className="space-y-6">
+                  <label className="text-[10px] font-mono text-white/30 uppercase tracking-[0.4em] font-bold ml-2">Initiative_Sector</label>
+                  <select className="w-full glass-surface border-white/10 rounded-3xl p-8 text-2xl font-display font-bold text-white outline-none focus:border-white transition-all appearance-none cursor-pointer">
+                     <option className="bg-black">Career</option>
+                     <option className="bg-black">Health</option>
+                     <option className="bg-black">Intelligence</option>
+                     <option className="bg-black">Kinetic</option>
+                  </select>
+               </div>
+               <div className="space-y-6">
+                  <label className="text-[10px] font-mono text-white/30 uppercase tracking-[0.4em] font-bold ml-2">Target_Timestamp</label>
+                  <input type="date" className="w-full glass-surface border-white/10 rounded-3xl p-8 text-2xl font-display font-bold text-white outline-none focus:border-white transition-all cursor-pointer invert brightness-200" />
+               </div>
+            </div>
+            <Button className="w-full h-24 text-3xl font-display font-black tracking-tighter rounded-full" variant="zenith-emerald" onClick={handleCreateGoal}>DEPLOY MISSION</Button>
+         </div>
+      </Modal>
     </div>
   );
 }
