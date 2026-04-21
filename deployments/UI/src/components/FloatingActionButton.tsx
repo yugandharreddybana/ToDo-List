@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Plus, Mic, BrainCircuit, X, Sparkles, Zap,
-  MicOff, Loader2, CheckCircle2,
+  MicOff, Loader2, CheckCircle2, PenLine,
 } from 'lucide-react';
 import { useCreateTask } from '../hooks/useTasks';
 import { parseVoiceToTasks, generateTasksFromPrompt, type GeminiTask } from '../services/gemini';
@@ -12,7 +12,7 @@ interface FABProps {
   onOpenAI?: () => void; // navigate to /ai page
 }
 
-type FABMode = 'idle' | 'menu' | 'voice' | 'ai-prompt';
+type FABMode = 'idle' | 'menu' | 'voice' | 'ai-prompt' | 'manual';
 
 /* ─── SpeechRecognition shim ─────────────────────────────────── */
 const SpeechRecognition =
@@ -91,15 +91,20 @@ export default function FloatingActionButton({ onOpenAI }: FABProps) {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
+  const [manualTitle, setManualTitle] = useState('');
+  const [manualPriority, setManualPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'>('MEDIUM');
+  const [manualDueDate, setManualDueDate] = useState('');
+  const [manualTags, setManualTags] = useState('');
+
   const recognitionRef = useRef<any>(null);
   const aiInputRef = useRef<HTMLInputElement>(null);
+  const manualTitleRef = useRef<HTMLInputElement>(null);
   const createTask = useCreateTask();
 
-  /* focus AI input when mode switches */
+  /* focus inputs when mode switches */
   useEffect(() => {
-    if (mode === 'ai-prompt') {
-      setTimeout(() => aiInputRef.current?.focus(), 120);
-    }
+    if (mode === 'ai-prompt') setTimeout(() => aiInputRef.current?.focus(), 120);
+    if (mode === 'manual') setTimeout(() => manualTitleRef.current?.focus(), 120);
   }, [mode]);
 
   /* cleanup on unmount */
@@ -204,18 +209,48 @@ export default function FloatingActionButton({ onOpenAI }: FABProps) {
     }
   }, [pendingTasks, createTask]);
 
+  /* ── manually create a single task ── */
+  const handleManualCreate = useCallback(async () => {
+    if (!manualTitle.trim()) return;
+    setIsProcessing(true);
+    setError('');
+    try {
+      await createTask.mutateAsync({
+        title: manualTitle.trim(),
+        priority: manualPriority,
+        dueDate: manualDueDate ? new Date(manualDueDate).toISOString() : undefined,
+        tags: manualTags ? manualTags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+        status: 'TODO',
+      });
+      setManualTitle('');
+      setManualPriority('MEDIUM');
+      setManualDueDate('');
+      setManualTags('');
+      setSaved(true);
+      setTimeout(() => { setSaved(false); setMode('idle'); }, 1200);
+    } catch (e: any) {
+      setError(e.message ?? 'Failed to create task');
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [manualTitle, manualPriority, manualDueDate, manualTags, createTask]);
+
   function close() {
     stopListening();
     setMode('idle');
     setTranscript('');
     setAiPrompt('');
+    setManualTitle('');
+    setManualPriority('MEDIUM');
+    setManualDueDate('');
+    setManualTags('');
     setError('');
     setPendingTasks([]);
     setSaved(false);
   }
 
   /* ─── Render ─────────────────────────────────────────────── */
-  const showPanel = mode === 'menu' || mode === 'voice' || mode === 'ai-prompt';
+  const showPanel = mode === 'menu' || mode === 'voice' || mode === 'ai-prompt' || mode === 'manual';
 
   return (
     <div
@@ -280,8 +315,9 @@ export default function FloatingActionButton({ onOpenAI }: FABProps) {
             {/* Mode Tabs */}
             <div style={{ display: 'flex', padding: '0.75rem 1.25rem 0', gap: '0.5rem' }}>
               {[
+                { id: 'manual', icon: <PenLine size={14} />, label: 'Manual' },
                 { id: 'voice', icon: <Mic size={14} />, label: 'Voice' },
-                { id: 'ai-prompt', icon: <Sparkles size={14} />, label: 'AI Generate' },
+                { id: 'ai-prompt', icon: <Sparkles size={14} />, label: 'AI' },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -314,6 +350,122 @@ export default function FloatingActionButton({ onOpenAI }: FABProps) {
 
             {/* Content Area */}
             <div style={{ padding: '0.875rem 1.25rem 1rem' }}>
+
+              {/* Manual Mode */}
+              {mode === 'manual' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                  {/* Title */}
+                  <input
+                    ref={manualTitleRef}
+                    value={manualTitle}
+                    onChange={(e) => setManualTitle(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleManualCreate()}
+                    placeholder="Task title…"
+                    style={{
+                      width: '100%',
+                      padding: '0.625rem 0.875rem',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: '0.625rem',
+                      fontSize: '0.875rem',
+                      color: 'rgba(255,255,255,0.9)',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  {/* Priority */}
+                  <div style={{ display: 'flex', gap: '0.375rem' }}>
+                    {(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const).map((p) => {
+                      const colors: Record<string, string> = { LOW: '#22c55e', MEDIUM: '#8b5cf6', HIGH: '#f97316', URGENT: '#f43f5e' };
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => setManualPriority(p)}
+                          style={{
+                            flex: 1,
+                            padding: '0.375rem 0.25rem',
+                            borderRadius: '0.5rem',
+                            border: `1px solid ${manualPriority === p ? colors[p] : 'rgba(255,255,255,0.1)'}`,
+                            background: manualPriority === p ? `${colors[p]}22` : 'rgba(255,255,255,0.03)',
+                            color: manualPriority === p ? colors[p] : 'rgba(255,255,255,0.4)',
+                            fontSize: '0.6875rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {/* Due date + Tags row */}
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input
+                      type="date"
+                      value={manualDueDate}
+                      onChange={(e) => setManualDueDate(e.target.value)}
+                      style={{
+                        flex: 1,
+                        padding: '0.5rem 0.75rem',
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: '0.625rem',
+                        fontSize: '0.8125rem',
+                        color: 'rgba(255,255,255,0.7)',
+                        outline: 'none',
+                        colorScheme: 'dark',
+                      }}
+                    />
+                    <input
+                      value={manualTags}
+                      onChange={(e) => setManualTags(e.target.value)}
+                      placeholder="tags, comma-separated"
+                      style={{
+                        flex: 1.4,
+                        padding: '0.5rem 0.75rem',
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: '0.625rem',
+                        fontSize: '0.8125rem',
+                        color: 'rgba(255,255,255,0.7)',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                  {/* Create button */}
+                  <button
+                    onClick={handleManualCreate}
+                    disabled={isProcessing || !manualTitle.trim()}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.5rem',
+                      padding: '0.625rem',
+                      borderRadius: '0.625rem',
+                      border: 'none',
+                      cursor: isProcessing || !manualTitle.trim() ? 'not-allowed' : 'pointer',
+                      fontWeight: 600,
+                      fontSize: '0.875rem',
+                      background: saved
+                        ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                        : 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+                      color: '#fff',
+                      opacity: !manualTitle.trim() ? 0.5 : 1,
+                      boxShadow: '0 4px 16px rgba(139,92,246,0.3)',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    {isProcessing
+                      ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />
+                      : saved
+                      ? <CheckCircle2 size={15} />
+                      : <Plus size={15} />}
+                    {saved ? 'Task Created!' : 'Create Task'}
+                  </button>
+                </div>
+              )}
 
               {/* Voice Mode */}
               {mode === 'voice' && (
@@ -558,7 +710,7 @@ export default function FloatingActionButton({ onOpenAI }: FABProps) {
       <motion.button
         whileHover={{ scale: 1.08 }}
         whileTap={{ scale: 0.95 }}
-        onClick={() => setMode(mode === 'idle' ? 'menu' : 'idle')}
+        onClick={() => setMode(mode === 'idle' ? 'manual' : 'idle')}
         style={{
           width: 56,
           height: 56,

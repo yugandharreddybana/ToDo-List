@@ -4,7 +4,7 @@ import {
   Plus, Trash2, ExternalLink, MapPin, DollarSign, Briefcase,
   Upload, Loader2, Sparkles, ChevronDown, ChevronUp,
   Star, AlertTriangle, FileText, Download, Eye, Zap,
-  Search, RefreshCw, CheckCircle2,
+  Search,
 } from 'lucide-react';
 import {
   useApplications, useCreateApplication, useUpdateApplication, useDeleteApplication,
@@ -110,7 +110,6 @@ function CVAnalyserPanel() {
   const [jobs, setJobs] = useState<JobMatch[]>([]);
   const [isFetchingJobs, setIsFetchingJobs] = useState(false);
   const [error, setError] = useState('');
-  const [cvText, setCvText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const processFile = useCallback(async (file: File) => {
@@ -123,7 +122,6 @@ function CVAnalyserPanel() {
     try {
       const text = await extractTextFromPDF(file);
       if (!text) throw new Error('Could not extract text from PDF.');
-      setCvText(text);
       const result = await matchCVToRoles(text);
       setAnalysis(result);
     } catch (e: any) {

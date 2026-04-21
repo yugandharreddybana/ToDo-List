@@ -32,10 +32,9 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // SAFETY CHECK: If it's a 401 and not already a retry
+    // Only attempt refresh for 401s that haven't been retried
     if (error.response?.status === 401 && !original._retry) {
-      // SAFETY CHECK: Do NOT retry if the request itself was to the refresh endpoint
-      // This prevents an infinite loop if the refresh token is invalid/expired
+      // Do NOT retry if the failing request was itself a refresh — avoids infinite loop
       if (original.url?.includes('/auth/refresh')) {
         setAccessToken(null);
         return Promise.reject(error);
@@ -62,7 +61,6 @@ api.interceptors.response.use(
 
       const newToken = await refreshPromise;
       if (newToken) {
-        original.headers = original.headers ?? {};
         original.headers.Authorization = `Bearer ${newToken}`;
         return api(original);
       }
