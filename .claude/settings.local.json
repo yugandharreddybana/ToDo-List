@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(ls packages/middleware/node_modules/.bin/tsc)",
+      "Bash(ls packages/frontend/node_modules/.bin/tsc)",
+      "Bash(where gh.exe)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" --version)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Users/Yugiii/AppData/Local/**)",
+      "Bash(curl -s -i \"https://middleware-financetracker-production.up.railway.app/api/health\" --max-time 15)",
+      "Bash(xargs grep *)",
+      "Bash(cmd /c \"cd /d F:\\\\Projects\\\\FinanceTracker\\\\packages\\\\frontend && npx tsc --noEmit 2>&1\")",
+      "Bash(cmd /c \"cd /d F:\\\\Projects\\\\FinanceTracker\\\\packages\\\\frontend && npx tsc --noEmit\")",
+      "Bash(powershell -Command \"Set-Location 'F:\\\\Projects\\\\FinanceTracker\\\\packages\\\\frontend'; npx tsc --noEmit 2>&1 | Select-Object -First 60\")",
+      "Bash(powershell -Command \"Set-Location 'F:\\\\Projects\\\\FinanceTracker'; git status --short\")",
+      "Bash(powershell -Command ' *)",
+      "Bash(powershell -Command \"Set-Location 'F:\\\\Projects\\\\FinanceTracker'; git push\")",
+      "Bash(powershell -Command \"Set-Location 'F:\\\\Projects\\\\FinanceTracker'; git status --short; git log origin/main..HEAD --oneline\")",
+      "Bash(grep -E \"\\\\.\\(tsx|ts|jsx|js\\)$\")",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(powershell -Command \"Get-ChildItem 'F:\\\\Projects\\\\FinanceTracker\\\\packages\\\\frontend\\\\src\\\\components\\\\' | Select-Object Name\")",
+      "Bash(powershell -Command \"Set-Location 'F:\\\\Projects\\\\FinanceTracker\\\\packages\\\\frontend'; npx tsc --noEmit 2>&1 | Select-Object -First 50\")"
+    ]
+  }
+}

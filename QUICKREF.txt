@@ -1,0 +1,141 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║         TODO PRODUCTIVITY SUITE - QUICK REFERENCE                    ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+🚀 START ALL SERVICES (RECOMMENDED)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Linux/Mac:
+  chmod +x start-dev.sh
+  ./start-dev.sh
+
+Windows:
+  start-dev.bat
+
+Docker:
+  docker-compose up -d
+
+---
+
+🔧 START INDIVIDUAL SERVICES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Terminal 1 - Backend (Java):
+  ./start-backend.sh
+
+Terminal 2 - Middleware (Node.js):
+  ./start-middleware.sh
+
+Terminal 3 - UI (React):
+  ./start-ui.sh
+
+---
+
+🌐 ACCESS SERVICES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Frontend:      http://localhost:3002
+Middleware:    http://localhost:3001
+Backend API:   http://localhost:8080/api
+API Docs:      http://localhost:8080/api/swagger-ui.html
+
+---
+
+✅ VERIFY SERVICES RUNNING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+curl http://localhost:8080/api/actuator/health
+curl http://localhost:3001/health
+curl http://localhost:3002
+
+---
+
+📋 REQUIREMENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+node --version        # Need 20+
+npm --version         # Need 10+
+java -version         # Need 21+
+mvn --version         # Need 3.9+
+
+---
+
+🐛 TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Port already in use?
+  lsof -i :3002 && kill -9 <PID>
+
+Database not running?
+  docker run -d --name todo-postgres \
+    -e POSTGRES_USER=todo_user \
+    -e POSTGRES_PASSWORD=todo_password \
+    -e POSTGRES_DB=todo_db \
+    -p 5432:5432 \
+    postgres:16-alpine
+
+Missing npm dependencies?
+  cd deployments/UI && npm install
+  cd deployments/Middleware && npm install
+
+Build failed?
+  cd deployments/Backend && mvn clean install -DskipTests
+
+---
+
+📚 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SETUP.md              - Complete setup guide
+DEPLOYMENT.md         - Production deployment
+TROUBLESHOOTING.md    - Common issues & fixes
+QUICKSTART.md         - 5-minute quick start
+README.md             - Project overview
+
+---
+
+📁 FOLDER STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+deployments/UI/            React/Vite (port 3002)
+deployments/Middleware/    Node.js/Express (port 3001)
+deployments/Backend/       Java Spring Boot (port 8080)
+
+---
+
+🔐 DATABASE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+User:       todo_user
+Password:   todo_password
+Database:   todo_db
+Schema:     todo_list
+Host:       localhost:5432
+
+---
+
+⚡ COMMON COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Stop all services:
+  Ctrl+C (in each terminal or main window)
+
+View backend logs:
+  tail -f /tmp/backend.log
+
+View middleware logs:
+  tail -f /tmp/middleware.log
+
+View ui logs:
+  tail -f /tmp/ui.log
+
+List running services:
+  ps aux | grep "node\|mvn\|java"
+
+Check database connection:
+  psql -U todo_user -d todo_db -h localhost
+
+---
+
+Ready? Run:
+  ./start-dev.sh

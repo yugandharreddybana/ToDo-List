@@ -1,0 +1,29 @@
+{
+  "name": "todo-productivity-suite",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Full-stack personal productivity suite: React frontend, Node.js middleware, Java Spring Boot backend.",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n frontend,middleware -c cyan,magenta \"npm run dev -w @tps/frontend\" \"npm run dev -w @tps/middleware\"",
+    "dev:frontend": "npm run dev -w @tps/frontend",
+    "dev:middleware": "npm run dev -w @tps/middleware",
+    "build": "npm run build --workspaces --if-present",
+    "build:shared": "npm run build -w @tps/shared",
+    "lint": "npm run lint --workspaces --if-present",
+    "install:java": "cd services/backend && mvn install",
+    "backend:run": "cd services/backend && mvn spring-boot:run",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0",
+    "typescript": "~5.8.2"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
