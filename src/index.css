@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Cormorant+Garamond:ital,wght@0,300..700;1,300..700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-serif: "Cormorant Garamond", serif;
+
+  --color-zenith-bg: #0A0A0B;
+  --color-zenith-surface: rgba(255, 255, 255, 0.03);
+  --color-zenith-border: rgba(255, 255, 255, 0.08);
+  --color-zenith-text: #FFFFFF;
+  --color-zenith-muted: #8E9BA4;
+  --color-zenith-accent: #E0E0E0; /* Soft Silver */
+  --color-zenith-emerald: #00F5A0; /* Cyber Emerald */
+  --color-zenith-aura: rgba(255, 255, 255, 0.02);
+  --color-zenith-success: #00F5A0;
+  --color-zenith-warning: #FFD700;
+  --color-zenith-error: #FF4D4D;
+
+  --shadow-zenith-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+  --radius-zenith: 1.5rem;
+}
+
+@layer base {
+  body {
+    @apply bg-zenith-bg text-zenith-text font-sans antialiased selection:bg-zenith-emerald/30 selection:text-zenith-emerald;
+    background: radial-gradient(circle at 50% -20%, #1A1C1E 0%, #0A0A0B 100%);
+    background-attachment: fixed;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/30;
+  }
+}
+
+@layer components {
+  .glass-surface {
+    @apply bg-white/[0.03] backdrop-blur-3xl border border-white/[0.08] shadow-zenith-glass;
+  }
+
+  .interactive-pane {
+    @apply bg-white/[0.03] backdrop-blur-3xl border border-white/[0.08] shadow-zenith-glass rounded-zenith transition-all duration-700 hover:border-white/[0.2] hover:bg-white/[0.06] hover:shadow-[0_0_40px_rgba(255,255,255,0.03)];
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/30;
+  }
+
+  .aura-glow {
+    @apply absolute pointer-events-none opacity-20 blur-[150px] rounded-full;
+    background: radial-gradient(circle, var(--color-zenith-emerald) 0%, transparent 70%);
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .nav-pill {
+    @apply px-4 py-2 rounded-full text-xs font-mono tracking-widest uppercase transition-all duration-300 border border-transparent;
+  }
+
+  .nav-pill-active {
+    @apply border-white/20 bg-white/5 text-white shadow-[0_0_20px_rgba(255,255,255,0.05)];
+  }
+}
