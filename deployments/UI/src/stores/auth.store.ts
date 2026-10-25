@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { api, setAccessToken } from '../lib/api';
 
 export interface AuthUser {
@@ -8,6 +7,7 @@ export interface AuthUser {
   name: string;
   timezone: string;
   avatarUrl?: string;
+  notificationsEnabled: boolean;
 }
 
 interface AuthState {
@@ -25,7 +25,6 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
     (set, get) => ({
       user: null,
       accessToken: null,
@@ -104,18 +103,4 @@ export const useAuthStore = create<AuthState>()(
         if (current) set({ user: { ...current, ...updates } });
       },
     }),
-    {
-      name: 'tps-auth',
-      partialize: (state) => ({
-        user: state.user,
-        accessToken: state.accessToken,
-        isAuthenticated: state.isAuthenticated,
-      }),
-      onRehydrateStorage: () => (state) => {
-        if (state?.accessToken) {
-          setAccessToken(state.accessToken);
-        }
-      },
-    },
-  ),
 );

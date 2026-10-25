@@ -1,20 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, type Variants } from 'framer-motion';
 import Layout from './components/Layout';
 import FloatingActionButton from './components/FloatingActionButton';
-import Dashboard from './components/Dashboard';
-import Tasks from './components/Tasks';
-import Timer from './components/Timer';
-import Goals from './components/Goals';
-import CareerCRM from './components/CareerCRM';
-import HealthTracker from './components/HealthTracker';
-import Analytics from './components/Analytics';
-import AI from './components/AI';
-import Settings from './components/Settings';
-import RosterInput from './components/RosterInput';
-import Onboarding from './components/Onboarding';
 import { useAuthStore } from './stores/auth.store';
+
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const Tasks = lazy(() => import('./components/Tasks'));
+const Timer = lazy(() => import('./components/Timer'));
+const Goals = lazy(() => import('./components/Goals'));
+const HealthTracker = lazy(() => import('./components/HealthTracker'));
+const Analytics = lazy(() => import('./components/Analytics'));
+const AI = lazy(() => import('./components/AI'));
+const Settings = lazy(() => import('./components/Settings'));
+const DailyPlan = lazy(() => import('./components/DailyPlan'));
+const NotificationInbox = lazy(() => import('./components/NotificationInbox'));
+const RosterInput = lazy(() => import('./components/RosterInput'));
+const Onboarding = lazy(() => import('./components/Onboarding'));
 
 const pageVariants: Variants = {
   initial: { opacity: 0, y: 8 },
@@ -66,7 +68,7 @@ export default function App() {
   }
 
   return (
-    <AnimatePresence mode="wait">
+    <Suspense fallback={<div role="status" style={{ padding: 24 }}>Loading…</div>}><AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route
           path="/login"
@@ -91,12 +93,13 @@ export default function App() {
                     <Route path="/tasks" element={<PageWrapper><Tasks /></PageWrapper>} />
                     <Route path="/timer" element={<PageWrapper><Timer /></PageWrapper>} />
                     <Route path="/goals" element={<PageWrapper><Goals /></PageWrapper>} />
-                    <Route path="/career" element={<PageWrapper><CareerCRM /></PageWrapper>} />
                     <Route path="/health" element={<PageWrapper><HealthTracker /></PageWrapper>} />
                     <Route path="/analytics" element={<PageWrapper><Analytics /></PageWrapper>} />
                     <Route path="/ai" element={<PageWrapper><AI /></PageWrapper>} />
                     <Route path="/roster" element={<PageWrapper><RosterInput /></PageWrapper>} />
                     <Route path="/settings" element={<PageWrapper><Settings /></PageWrapper>} />
+                    <Route path="/plan" element={<PageWrapper><DailyPlan /></PageWrapper>} />
+                    <Route path="/notifications" element={<PageWrapper><NotificationInbox /></PageWrapper>} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </AnimatePresence>
@@ -105,6 +108,6 @@ export default function App() {
           }
         />
       </Routes>
-    </AnimatePresence>
+    </AnimatePresence></Suspense>
   );
 }

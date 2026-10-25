@@ -7,6 +7,10 @@ export type NotificationType =
   | 'GOAL_DEADLINE'
   | 'HABIT_REMINDER'
   | 'WEEKLY_SUMMARY'
+  | 'DAILY_SUMMARY'
+  | 'MONTHLY_SUMMARY'
+  | 'REPLAN_SUGGESTION'
+  | 'FOLLOW_UP'
   | 'SYSTEM';
 
 export interface Notification {

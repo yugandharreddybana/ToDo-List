@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   CheckCircle2, Clock, Target, TrendingUp, Plus, ArrowRight,
-  Loader2, BrainCircuit, Flame, Star, Zap,
+  Loader2, BrainCircuit, Flame, Star,
   Calendar, ListTodo, Activity,
 } from 'lucide-react';
 import { useTasks, useCreateTask, useUpdateTaskStatus } from '../hooks/useTasks';
 import { useAuthStore } from '../stores/auth.store';
-import { getAIInsight } from '../services/gemini';
+import { getAIInsight } from '../services/ai';
 import type { Task, TaskPriority } from '../stores/task.store';
 
 const PRIORITY_COLOR: Record<TaskPriority, string> = {
@@ -386,7 +386,6 @@ export default function Dashboard() {
               { to: '/timer', icon: <Clock size={15} />, label: 'Pomodoro', color: '#3b82f6' },
               { to: '/goals', icon: <Target size={15} />, label: 'Goals', color: '#22c55e' },
               { to: '/analytics', icon: <TrendingUp size={15} />, label: 'Analytics', color: '#f43f5e' },
-              { to: '/career', icon: <Zap size={15} />, label: 'Career', color: '#a78bfa' },
             ].map((item) => (
               <Link
                 key={item.to}

@@ -3,18 +3,16 @@
   "private": true,
   "version": "1.0.0",
   "description": "Full-stack personal productivity suite: React frontend, Node.js middleware, Java Spring Boot backend.",
-  "workspaces": [
-    "packages/*"
-  ],
+  "workspaces": ["packages/*"],
   "scripts": {
-    "dev": "concurrently -k -n frontend,middleware -c cyan,magenta \"npm run dev -w @tps/frontend\" \"npm run dev -w @tps/middleware\"",
-    "dev:frontend": "npm run dev -w @tps/frontend",
-    "dev:middleware": "npm run dev -w @tps/middleware",
-    "build": "npm run build --workspaces --if-present",
+    "dev": "concurrently -k -n frontend,middleware -c cyan,magenta \"npm run dev --prefix deployments/UI\" \"npm run dev --prefix deployments/Middleware\"",
+    "dev:frontend": "npm run dev --prefix deployments/UI",
+    "dev:middleware": "npm run dev --prefix deployments/Middleware",
+    "build": "npm run build -w @tps/shared && npm run build --prefix deployments/UI && npm run build --prefix deployments/Middleware",
     "build:shared": "npm run build -w @tps/shared",
     "lint": "npm run lint --workspaces --if-present",
-    "install:java": "cd services/backend && mvn install",
-    "backend:run": "cd services/backend && mvn spring-boot:run",
+    "backend:build": "mvn -f deployments/Backend/pom.xml verify",
+    "backend:run": "mvn -f deployments/Backend/pom.xml spring-boot:run",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down"
   },

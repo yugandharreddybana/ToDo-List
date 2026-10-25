@@ -21,12 +21,13 @@ import {
 import type { Task, TaskStatus, TaskPriority } from '../stores/task.store';
 import { useTaskStore } from '../stores/task.store';
 import { Modal } from './ui/Modal';
-import { parseVoiceToTasks, generateTasksFromPrompt, type GeminiTask } from '../services/gemini';
+import { parseVoiceToTasks, generateTasksFromPrompt, type AITask } from '../services/ai';
 
 /* ─── Constants ─────────────────────────────────────────────── */
 const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: 'TODO', label: 'To Do' },
   { value: 'IN_PROGRESS', label: 'In Progress' },
+  { value: 'BLOCKED', label: 'Blocked' },
   { value: 'DONE', label: 'Done' },
   { value: 'CANCELLED', label: 'Cancelled' },
 ];
@@ -48,6 +49,7 @@ const PRIORITY_COLOR: Record<TaskPriority, string> = {
 const STATUS_BG: Record<TaskStatus, string> = {
   TODO: 'rgba(255,255,255,0.08)',
   IN_PROGRESS: 'rgba(59,130,246,0.15)',
+  BLOCKED: 'rgba(249,115,22,0.14)',
   DONE: 'rgba(34,197,94,0.12)',
   CANCELLED: 'rgba(255,255,255,0.04)',
 };
@@ -56,7 +58,6 @@ const RECURRING_OPTIONS = [
   { value: '', label: 'Not recurring' },
   { value: 'daily', label: 'Daily' },
   { value: 'weekly', label: 'Weekly' },
-  { value: 'weekdays', label: 'Weekdays (Mon–Fri)' },
   { value: 'biweekly', label: 'Every 2 weeks' },
   { value: 'monthly', label: 'Monthly' },
 ];
@@ -64,6 +65,12 @@ const RECURRING_OPTIONS = [
 /* ─── SpeechRecognition shim ─────────────────────────────────── */
 const SpeechRecognition =
   (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+function localDate(value: string): string {
+  const date = new Date(value);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+function dueAtEndOfDay(value: string): string { return new Date(`${value}T23:59:00`).toISOString(); }
 
 /* ─── Utility styles ─────────────────────────────────────────── */
 function glassInput(extra?: object) {
@@ -107,11 +114,12 @@ function PriorityDot({ priority }: { priority: TaskPriority }) {
 /* ─── Status pill ────────────────────────────────────────────── */
 function StatusBadge({ status }: { status: TaskStatus }) {
   const labels: Record<TaskStatus, string> = {
-    TODO: 'To Do', IN_PROGRESS: 'In Progress', DONE: 'Done', CANCELLED: 'Cancelled',
+    TODO: 'To Do', IN_PROGRESS: 'In Progress', BLOCKED: 'Blocked', DONE: 'Done', CANCELLED: 'Cancelled',
   };
   const colors: Record<TaskStatus, string> = {
     TODO: 'rgba(255,255,255,0.6)',
     IN_PROGRESS: '#60a5fa',
+    BLOCKED: '#fb923c',
     DONE: '#4ade80',
     CANCELLED: 'rgba(255,255,255,0.3)',
   };
@@ -337,6 +345,11 @@ interface TaskFormData {
   description: string;
   status: TaskStatus;
   priority: TaskPriority;
+  estimatedMinutes: number;
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  energyRequirement: 'LOW' | 'MEDIUM' | 'HIGH';
+  confidentiality: 'PUBLIC' | 'PERSONAL' | 'CONFIDENTIAL' | 'HIGHLY_CONFIDENTIAL';
+  environment: string;
   dueDate: string;
   tags: string;
   isRecurring: boolean;
@@ -348,17 +361,22 @@ const DEFAULT_FORM: TaskFormData = {
   description: '',
   status: 'TODO',
   priority: 'MEDIUM',
+  estimatedMinutes: 25,
+  difficulty: 'MEDIUM',
+  energyRequirement: 'MEDIUM',
+  confidentiality: 'PERSONAL',
+  environment: '',
   dueDate: '',
   tags: '',
   isRecurring: false,
-  recurringPattern: '',
+  recurringPattern: 'daily',
 };
 
 /* ─── AI / Voice creation panel ─────────────────────────────── */
 function AIVoicePanel({
   onTasksGenerated,
 }: {
-  onTasksGenerated: (tasks: GeminiTask[]) => void;
+  onTasksGenerated: (tasks: AITask[]) => void;
 }) {
   const [tab, setTab] = useState<'ai' | 'voice'>('ai');
   const [aiPrompt, setAiPrompt] = useState('');
@@ -579,7 +597,7 @@ export default function Tasks() {
   const [form, setForm] = useState<TaskFormData>(DEFAULT_FORM);
   const [showFilters, setShowFilters] = useState(false);
   const [showAIPanel, setShowAIPanel] = useState(false);
-  const [pendingBulk, setPendingBulk] = useState<GeminiTask[]>([]);
+  const [pendingBulk, setPendingBulk] = useState<AITask[]>([]);
   const [isSavingBulk, setIsSavingBulk] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
@@ -607,10 +625,15 @@ export default function Tasks() {
       description: task.description ?? '',
       status: task.status,
       priority: task.priority,
-      dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
+      estimatedMinutes: task.estimatedMinutes ?? 25,
+      difficulty: task.difficulty ?? 'MEDIUM',
+      energyRequirement: task.energyRequirement ?? 'MEDIUM',
+      confidentiality: task.confidentiality ?? 'PERSONAL',
+      environment: task.environment ?? '',
+      dueDate: task.dueDate ? localDate(task.dueDate) : '',
       tags: task.tags.join(', '),
       isRecurring: task.isRecurring ?? false,
-      recurringPattern: '',
+      recurringPattern: task.recurrenceFreq === 'WEEKLY' && task.recurrenceInterval === 2 ? 'biweekly' : (task.recurrenceFreq ?? 'DAILY').toLowerCase(),
     });
     setModalOpen(true);
   }
@@ -621,9 +644,16 @@ export default function Tasks() {
       description: form.description || undefined,
       status: form.status,
       priority: form.priority,
-      dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : undefined,
+      estimatedMinutes: form.estimatedMinutes,
+      difficulty: form.difficulty,
+      energyRequirement: form.energyRequirement,
+      confidentiality: form.confidentiality,
+      environment: form.environment.trim() || undefined,
+      dueDate: form.dueDate ? dueAtEndOfDay(form.dueDate) : undefined,
       tags: form.tags ? form.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
       isRecurring: form.isRecurring,
+      recurrenceFreq: form.isRecurring ? (form.recurringPattern === 'biweekly' ? 'WEEKLY' : form.recurringPattern.toUpperCase()) as 'DAILY' | 'WEEKLY' | 'MONTHLY' : undefined,
+      recurrenceInterval: form.isRecurring && form.recurringPattern === 'biweekly' ? 2 : 1,
     };
     if (editingTask) {
       await updateTask.mutateAsync({ id: editingTask.id, ...payload });
@@ -657,9 +687,11 @@ export default function Tasks() {
             title: t.title,
             description: t.description,
             priority: t.priority,
+            estimatedMinutes: t.durationMinutes,
             tags: t.tags,
-            dueDate: t.dueDate ? new Date(t.dueDate).toISOString() : undefined,
+            dueDate: t.dueDate ? (/^\d{4}-\d{2}-\d{2}$/.test(t.dueDate) ? dueAtEndOfDay(t.dueDate) : new Date(t.dueDate).toISOString()) : undefined,
             isRecurring: t.isRecurring ?? false,
+            recurrenceFreq: t.recurrenceFreq,
             status: 'TODO',
           }),
         ),
@@ -671,7 +703,7 @@ export default function Tasks() {
     }
   }
 
-  function addToPending(newTasks: GeminiTask[]) {
+  function addToPending(newTasks: AITask[]) {
     setPendingBulk((prev) => [...prev, ...newTasks]);
   }
 
@@ -996,6 +1028,7 @@ export default function Tasks() {
           {([
             { status: 'TODO', label: 'To Do', color: 'rgba(255,255,255,0.5)' },
             { status: 'IN_PROGRESS', label: 'In Progress', color: '#60a5fa' },
+            { status: 'BLOCKED', label: 'Blocked', color: '#fb923c' },
             { status: 'DONE', label: 'Done', color: '#4ade80' },
             { status: 'CANCELLED', label: 'Cancelled', color: 'rgba(255,255,255,0.3)' },
           ] as const).map((col) => (
@@ -1084,6 +1117,14 @@ export default function Tasks() {
             </div>
           </div>
 
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem' }}>
+            <div>{label('Estimated duration (minutes) *')}<input type="number" min={1} max={1440} value={form.estimatedMinutes} onChange={e => setForm(f => ({ ...f, estimatedMinutes: Number(e.target.value) }))} style={glassInput()} /></div>
+            <div>{label('Difficulty')}<select value={form.difficulty} onChange={e => setForm(f => ({ ...f, difficulty: e.target.value as TaskFormData['difficulty'] }))} style={glassInput()}>{['EASY', 'MEDIUM', 'HARD'].map(v => <option key={v} value={v}>{v}</option>)}</select></div>
+            <div>{label('Energy needed')}<select value={form.energyRequirement} onChange={e => setForm(f => ({ ...f, energyRequirement: e.target.value as TaskFormData['energyRequirement'] }))} style={glassInput()}>{['LOW', 'MEDIUM', 'HIGH'].map(v => <option key={v} value={v}>{v}</option>)}</select></div>
+            <div>{label('Confidentiality')}<select value={form.confidentiality} onChange={e => setForm(f => ({ ...f, confidentiality: e.target.value as TaskFormData['confidentiality'] }))} style={glassInput()}>{['PUBLIC', 'PERSONAL', 'CONFIDENTIAL', 'HIGHLY_CONFIDENTIAL'].map(v => <option key={v} value={v}>{v.replaceAll('_', ' ')}</option>)}</select></div>
+          </div>
+          <div>{label('Environment or location')}<input value={form.environment} onChange={e => setForm(f => ({ ...f, environment: e.target.value }))} placeholder="Optional dependency, e.g. quiet desk" style={glassInput()} /></div>
+
           {/* Due Date + Tags */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.625rem' }}>
             <div>
@@ -1112,6 +1153,7 @@ export default function Tasks() {
           {/* Recurring */}
           <div>
             {label('Recurring')}
+            {form.isRecurring && !form.dueDate && <p style={{ color: '#fca5a5', fontSize: '0.75rem' }}>Choose a due date to repeat this task.</p>}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}>
                 <div
@@ -1174,7 +1216,7 @@ export default function Tasks() {
             </button>
             <button
               onClick={handleSave}
-              disabled={!form.title.trim() || createTask.isPending || updateTask.isPending}
+      disabled={!form.title.trim() || form.estimatedMinutes < 1 || form.estimatedMinutes > 1440 || (form.isRecurring && !form.dueDate) || createTask.isPending || updateTask.isPending}
               style={{
                 display: 'flex',
                 alignItems: 'center',

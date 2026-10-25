@@ -1,5 +1,7 @@
 # Troubleshooting Guide
 
+> Some examples below describe the legacy standalone setup and may not match the current Docker Compose network. For the current stack, start with `docker compose ps`, `docker compose logs`, and [README.md](./README.md).
+
 ## 🎯 Quick Diagnosis
 
 **Run this to see what's happening:**

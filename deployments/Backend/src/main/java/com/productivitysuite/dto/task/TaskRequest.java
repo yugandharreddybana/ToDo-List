@@ -3,6 +3,9 @@ package com.productivitysuite.dto.task;
 import com.productivitysuite.entity.Task.TaskPriority;
 import com.productivitysuite.entity.Task.TaskStatus;
 import com.productivitysuite.entity.Task.RecurrenceFreq;
+import com.productivitysuite.entity.Task.TaskDifficulty;
+import com.productivitysuite.entity.Task.EnergyRequirement;
+import com.productivitysuite.entity.Task.Confidentiality;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
@@ -20,6 +23,13 @@ public class TaskRequest {
 
     private TaskStatus status = TaskStatus.TODO;
     private TaskPriority priority = TaskPriority.MEDIUM;
+    @Min(1) @Max(1440)
+    private int estimatedMinutes = 25;
+    private TaskDifficulty difficulty = TaskDifficulty.MEDIUM;
+    private EnergyRequirement energyRequirement = EnergyRequirement.MEDIUM;
+    private Confidentiality confidentiality = Confidentiality.PERSONAL;
+    @Size(max = 120)
+    private String environment;
     private Instant dueDate;
 
     @Size(max = 20)

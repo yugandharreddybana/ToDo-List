@@ -26,6 +26,9 @@ public class HealthLogRequest {
     @DecimalMin("0")
     private BigDecimal weightKg;
 
+    @Min(0) private Integer stepsCount;
+    @Min(0) private Integer calories;
+
     @Size(max = 2000)
     private String notes;
 }

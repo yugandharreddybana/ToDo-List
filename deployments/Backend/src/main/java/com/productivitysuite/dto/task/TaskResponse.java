@@ -17,6 +17,11 @@ public class TaskResponse {
     private String description;
     private Task.TaskStatus status;
     private Task.TaskPriority priority;
+    private int estimatedMinutes;
+    private Task.TaskDifficulty difficulty;
+    private Task.EnergyRequirement energyRequirement;
+    private Task.Confidentiality confidentiality;
+    private String environment;
     private Instant dueDate;
     private List<String> tags;
     private UUID parentTaskId;

@@ -42,6 +42,9 @@ public class RosterShift {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    @Column(length = 200)
+    private String location;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();

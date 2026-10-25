@@ -3,10 +3,13 @@ package com.productivitysuite.controller;
 import com.productivitysuite.entity.User;
 import com.productivitysuite.exception.ResourceNotFoundException;
 import com.productivitysuite.repository.UserRepository;
+import com.productivitysuite.service.PlanningService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import com.productivitysuite.exception.UnauthorizedException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,6 +23,8 @@ import java.util.UUID;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final PlanningService events;
 
     @GetMapping("/me")
     public ResponseEntity<UserResponse> me(@AuthenticationPrincipal UserDetails principal) {
@@ -34,9 +39,33 @@ public class UserController {
     ) {
         User user = findUser(principal);
         if (req.getName() != null) user.setName(req.getName());
-        if (req.getTimezone() != null) user.setTimezone(req.getTimezone());
+        if (req.getTimezone() != null) {
+            try { java.time.ZoneId.of(req.getTimezone()); }
+            catch (java.time.DateTimeException ex) { throw new IllegalArgumentException("Invalid timezone"); }
+            user.setTimezone(req.getTimezone());
+        }
         if (req.getAvatarUrl() != null) user.setAvatarUrl(req.getAvatarUrl());
-        return ResponseEntity.ok(UserResponse.from(userRepository.save(user)));
+        if (req.getNotificationsEnabled() != null) user.setNotificationsEnabled(req.getNotificationsEnabled());
+        User saved = userRepository.save(user);
+        events.record(saved.getId(), "user.profile.updated", "user", saved.getId(), java.util.Map.of());
+        return ResponseEntity.ok(UserResponse.from(saved));
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<Void> changePassword(@AuthenticationPrincipal UserDetails principal, @Valid @RequestBody PasswordRequest request) {
+        User user = findUser(principal);
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash()))
+            throw new UnauthorizedException("Current password is incorrect");
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        events.record(user.getId(), "user.password.changed", "user", user.getId(), java.util.Map.of());
+        return ResponseEntity.noContent().build();
+    }
+
+    @Data
+    public static class PasswordRequest {
+        @jakarta.validation.constraints.NotBlank private String currentPassword;
+        @jakarta.validation.constraints.NotBlank @Size(min = 8, max = 128) private String newPassword;
     }
 
     @DeleteMapping("/me")
@@ -52,9 +81,9 @@ public class UserController {
             .orElseThrow(() -> new ResourceNotFoundException("User", id));
     }
 
-    public record UserResponse(UUID id, String email, String name, String avatarUrl, String timezone) {
+    public record UserResponse(UUID id, String email, String name, String avatarUrl, String timezone, boolean notificationsEnabled) {
         static UserResponse from(User u) {
-            return new UserResponse(u.getId(), u.getEmail(), u.getName(), u.getAvatarUrl(), u.getTimezone());
+            return new UserResponse(u.getId(), u.getEmail(), u.getName(), u.getAvatarUrl(), u.getTimezone(), u.isNotificationsEnabled());
         }
     }
 
@@ -66,5 +95,6 @@ public class UserController {
         private String timezone;
         @Size(max = 512)
         private String avatarUrl;
+        private Boolean notificationsEnabled;
     }
 }

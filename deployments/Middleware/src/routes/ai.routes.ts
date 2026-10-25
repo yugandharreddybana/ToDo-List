@@ -2,8 +2,10 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { backendAuthed } from '../services/backend.client.js';
 import { requireAuth } from '../middleware/auth.js';
 import { streamChat, singleChat, type ChatMessage } from '../services/ai.service.js';
+import { z } from 'zod';
 
 const router = Router();
+const chatInput = z.object({ messages: z.array(z.object({ role: z.enum(['user', 'assistant']), content: z.string().min(1).max(8000) })).min(1).max(40) });
 
 router.use(requireAuth);
 
@@ -13,12 +15,12 @@ function client(req: Request) {
 
 router.post('/chat', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { messages } = req.body as { messages: ChatMessage[] };
-    if (!Array.isArray(messages) || messages.length === 0) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'messages array required' } });
+    const parsed = chatInput.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid chat messages' } });
       return;
     }
-    await streamChat(messages, res);
+    await streamChat(parsed.data.messages as ChatMessage[], res);
   } catch (err) {
     next(err);
   }
@@ -26,12 +28,12 @@ router.post('/chat', async (req: Request, res: Response, next: NextFunction) => 
 
 router.post('/chat/sync', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { messages } = req.body as { messages: ChatMessage[] };
-    if (!Array.isArray(messages) || messages.length === 0) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'messages array required' } });
+    const parsed = chatInput.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid chat messages' } });
       return;
     }
-    const text = await singleChat(messages);
+    const text = await singleChat(parsed.data.messages as ChatMessage[]);
     res.json({ text });
   } catch (err) {
     next(err);

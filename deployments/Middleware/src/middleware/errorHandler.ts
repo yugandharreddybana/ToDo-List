@@ -27,12 +27,12 @@ export function errorHandler(
     const status = err.response?.status ?? 502;
     const body = err.response?.data as { message?: string } | undefined;
     res.status(status).json({
-      error: { code: 'BACKEND_ERROR', message: body?.message ?? err.message },
+      error: { code: 'BACKEND_ERROR', message: status < 500 ? body?.message ?? 'Request rejected' : 'Service unavailable' },
     });
     return;
   }
 
-  const message = err instanceof Error ? err.message : 'Something went wrong';
   console.error('[middleware] unhandled error:', err);
-  res.status(500).json({ error: { code: 'INTERNAL_ERROR', message } });
+  if (!res.headersSent) res.status(500).json({ error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' } });
+  else res.end();
 }

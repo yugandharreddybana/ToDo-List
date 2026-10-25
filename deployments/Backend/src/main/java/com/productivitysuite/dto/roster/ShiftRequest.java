@@ -22,4 +22,7 @@ public class ShiftRequest {
 
     @Size(max = 500)
     private String notes;
+
+    @Size(max = 200)
+    private String location;
 }

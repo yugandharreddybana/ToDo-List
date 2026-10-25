@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
-export type SessionType = 'POMODORO' | 'SHORT_BREAK' | 'LONG_BREAK' | 'DEEP_WORK' | 'CUSTOM';
+export type SessionType = 'POMODORO' | 'SHORT_BREAK' | 'LONG_BREAK' | 'CUSTOM';
 
 export interface FocusSession {
   id: string;
   type: SessionType;
   durationMinutes: number;
+  actualSeconds: number;
   startTime: string;
   endTime?: string;
   taskId?: string;
@@ -49,10 +50,11 @@ export function useStartSession() {
 export function useCompleteSession() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, notes }: { id: string; notes?: string }) => {
+    mutationFn: async ({ id, notes, actualSeconds, completed = true }: { id: string; notes?: string; actualSeconds: number; completed?: boolean }) => {
       const { data } = await api.put<FocusSession>(`/api/sessions/${id}`, {
         endTime: new Date().toISOString(),
-        completed: true,
+        completed,
+        actualSeconds,
         notes,
       });
       return data;

@@ -3,6 +3,12 @@ import { backendAuthed } from '../services/backend.client.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
+type BackendLog = Record<string, unknown> & { date?: string; waterIntakeLiters?: number };
+const toUiLog = (log: BackendLog) => ({ ...log, logDate: log.date, waterMl: log.waterIntakeLiters == null ? undefined : Math.round(Number(log.waterIntakeLiters) * 1000) });
+const toBackendLog = (body: Record<string, unknown>) => ({ ...body, date: body.logDate, waterIntakeLiters: body.waterMl == null ? undefined : Number(body.waterMl) / 1000 });
+type BackendHabit = Record<string, unknown> & { frequency?: string };
+const toUiHabit = (habit: BackendHabit) => ({ ...habit, targetFrequency: habit.frequency === 'WEEKLY' ? 1 : 7, active: true });
+const toBackendHabit = (body: Record<string, unknown>) => ({ ...body, frequency: Number(body.targetFrequency) === 1 ? 'WEEKLY' : 'DAILY' });
 
 router.use(requireAuth);
 
@@ -13,7 +19,7 @@ function client(req: Request) {
 router.get('/logs', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { data } = await client(req).get('/health/logs', { params: req.query });
-    res.json(data);
+    res.json((data as BackendLog[]).map(toUiLog));
   } catch (err) {
     next(err);
   }
@@ -21,8 +27,8 @@ router.get('/logs', async (req: Request, res: Response, next: NextFunction) => {
 
 router.post('/logs', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { data } = await client(req).post('/health/logs', req.body);
-    res.status(201).json(data);
+    const { data } = await client(req).post<BackendLog>('/health/logs', toBackendLog(req.body));
+    res.status(201).json(toUiLog(data));
   } catch (err) {
     next(err);
   }
@@ -30,8 +36,8 @@ router.post('/logs', async (req: Request, res: Response, next: NextFunction) => 
 
 router.put('/logs/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { data } = await client(req).put(`/health/logs/${req.params.id}`, req.body);
-    res.json(data);
+    const { data } = await client(req).put<BackendLog>(`/health/logs/${req.params.id}`, toBackendLog(req.body));
+    res.json(toUiLog(data));
   } catch (err) {
     next(err);
   }
@@ -49,7 +55,7 @@ router.delete('/logs/:id', async (req: Request, res: Response, next: NextFunctio
 router.get('/habits', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { data } = await client(req).get('/health/habits');
-    res.json(data);
+    res.json((data as BackendHabit[]).map(toUiHabit));
   } catch (err) {
     next(err);
   }
@@ -57,8 +63,8 @@ router.get('/habits', async (req: Request, res: Response, next: NextFunction) =>
 
 router.post('/habits', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { data } = await client(req).post('/health/habits', req.body);
-    res.status(201).json(data);
+    const { data } = await client(req).post<BackendHabit>('/health/habits', toBackendHabit(req.body));
+    res.status(201).json(toUiHabit(data));
   } catch (err) {
     next(err);
   }
@@ -66,8 +72,8 @@ router.post('/habits', async (req: Request, res: Response, next: NextFunction) =
 
 router.put('/habits/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { data } = await client(req).put(`/health/habits/${req.params.id}`, req.body);
-    res.json(data);
+    const { data } = await client(req).put<BackendHabit>(`/health/habits/${req.params.id}`, toBackendHabit(req.body));
+    res.json(toUiHabit(data));
   } catch (err) {
     next(err);
   }
@@ -93,11 +99,18 @@ router.get('/habits/:id/logs', async (req: Request, res: Response, next: NextFun
   }
 });
 
+router.get('/habits/logs/all', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { data } = await client(req).get('/health/habits/logs', { params: req.query });
+    res.json(data);
+  } catch (err) { next(err); }
+});
+
 router.post('/habits/:id/logs', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { data } = await client(req).post(
       `/health/habits/${req.params.id}/logs`,
-      req.body,
+      { ...req.body, date: req.body.logDate },
     );
     res.status(201).json(data);
   } catch (err) {

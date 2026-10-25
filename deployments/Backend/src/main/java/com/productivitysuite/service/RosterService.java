@@ -19,6 +19,7 @@ public class RosterService {
 
     private final RosterShiftRepository shiftRepo;
     private final UserRepository userRepository;
+    private final PlanningService events;
 
     @Transactional(readOnly = true)
     public List<ShiftResponse> list(UUID userId) {
@@ -30,8 +31,10 @@ public class RosterService {
         User user = userRepository.findById(userId).orElseThrow();
         RosterShift shift = RosterShift.builder()
             .user(user).shiftDate(req.getDate()).startTime(req.getStartTime())
-            .endTime(req.getEndTime()).shiftType(req.getShiftType()).notes(req.getNotes()).build();
-        return toResponse(shiftRepo.save(shift));
+            .endTime(req.getEndTime()).shiftType(req.getShiftType()).notes(req.getNotes()).location(req.getLocation()).build();
+        RosterShift saved = shiftRepo.save(shift);
+        events.record(userId, "roster.created", "roster_shift", saved.getId(), java.util.Map.of());
+        return toResponse(saved);
     }
 
     public ShiftResponse update(UUID userId, UUID shiftId, ShiftRequest req) {
@@ -42,18 +45,22 @@ public class RosterService {
         if (req.getEndTime() != null) shift.setEndTime(req.getEndTime());
         if (req.getShiftType() != null) shift.setShiftType(req.getShiftType());
         shift.setNotes(req.getNotes());
-        return toResponse(shiftRepo.save(shift));
+        shift.setLocation(req.getLocation());
+        RosterShift saved = shiftRepo.save(shift);
+        events.record(userId, "roster.updated", "roster_shift", shiftId, java.util.Map.of());
+        return toResponse(saved);
     }
 
     public void delete(UUID userId, UUID shiftId) {
         shiftRepo.delete(shiftRepo.findByIdAndUserId(shiftId, userId)
             .orElseThrow(() -> new ResourceNotFoundException("Shift", shiftId)));
+        events.record(userId, "roster.deleted", "roster_shift", shiftId, java.util.Map.of());
     }
 
     private ShiftResponse toResponse(RosterShift s) {
         return ShiftResponse.builder()
             .id(s.getId()).userId(s.getUser().getId()).date(s.getShiftDate())
             .startTime(s.getStartTime()).endTime(s.getEndTime())
-            .shiftType(s.getShiftType()).notes(s.getNotes()).createdAt(s.getCreatedAt()).build();
+            .shiftType(s.getShiftType()).notes(s.getNotes()).location(s.getLocation()).createdAt(s.getCreatedAt()).build();
     }
 }

@@ -1,6 +1,6 @@
 # Project Summary - Todo Productivity Suite
 
-## ✅ Status: COMPLETE & PRODUCTION-READY
+## Archived April 2026 snapshot — superseded by README.md
 
 ---
 
@@ -17,7 +17,7 @@
 | **DTOs** | 26 |
 | **Repositories** | 16 |
 | **Lines of Code** | 50,000+ |
-| **Test Coverage** | Production-ready |
+| **Test Coverage** | Historical claim; see current test results |
 
 ---
 
@@ -51,8 +51,7 @@
 - [x] Data visualization
 
 ### ✅ Advanced Features
-- [x] AI-powered assistance (Anthropic API)
-- [x] Career CRM (applications, contacts)
+- [x] AI-powered assistance (now NVIDIA NIM)
 - [x] Roster/shift management
 - [x] Real-time notifications
 - [x] Data export
@@ -211,7 +210,6 @@ Once running:
 - **Tasks:** 14 endpoints (CRUD, comments, subtasks)
 - **Goals:** 10 endpoints (CRUD, milestones)
 - **Health:** 10 endpoints (logging, metrics)
-- **Career:** 9 endpoints (applications, contacts)
 - **AI:** 7 endpoints (chat, prompts)
 - **Auth:** 5 endpoints (register, login, refresh)
 - **Sessions:** 5 endpoints (focus sessions)
@@ -250,7 +248,7 @@ Before deployment, verify:
 - 74+ fully implemented endpoints
 - All services functional
 
-### Test Coverage: ✅ Production Ready
+### Historical Test Coverage (not a current sign-off)
 - Error handling complete
 - Validation implemented
 - Security measures in place
@@ -327,7 +325,7 @@ Before deployment, verify:
 
 ## ✨ Summary
 
-**The Todo Productivity Suite is complete, tested, and production-ready.**
+This April 2026 snapshot is not a current production-readiness assessment.
 
 All features work. All code is implemented. All configurations are in place. Everything is documented.
 
@@ -343,6 +341,5 @@ You can:
 ---
 
 **Project Version:** 1.0.0  
-**Status:** ✅ PRODUCTION READY  
-**Completeness:** 100%  
+**Status:** Archived snapshot; superseded by README.md
 **Last Updated:** April 21, 2026

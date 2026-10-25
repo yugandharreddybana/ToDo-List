@@ -10,10 +10,19 @@ function client(req: Request) {
   return backendAuthed(req.headers.authorization!.slice(7));
 }
 
+function toUi(shift: Record<string, unknown>) {
+  return { ...shift, shiftDate: shift.date, type: shift.shiftType };
+}
+function toBackend(body: Record<string, unknown>) {
+  const { shiftDate, type, ...rest } = body;
+  return { ...rest, date: shiftDate, shiftType: type };
+}
+
 router.get('/shifts', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { data } = await client(req).get('/roster/shifts', { params: req.query });
-    res.json(data);
+    const { from, to } = req.query;
+    res.json((data as Record<string, unknown>[]).filter(s => (!from || String(s.date) >= String(from)) && (!to || String(s.date) <= String(to))).map(toUi));
   } catch (err) {
     next(err);
   }
@@ -21,8 +30,8 @@ router.get('/shifts', async (req: Request, res: Response, next: NextFunction) =>
 
 router.post('/shifts', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { data } = await client(req).post('/roster/shifts', req.body);
-    res.status(201).json(data);
+    const { data } = await client(req).post('/roster/shifts', toBackend(req.body));
+    res.status(201).json(toUi(data));
   } catch (err) {
     next(err);
   }
@@ -30,8 +39,8 @@ router.post('/shifts', async (req: Request, res: Response, next: NextFunction) =
 
 router.put('/shifts/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { data } = await client(req).put(`/roster/shifts/${req.params.id}`, req.body);
-    res.json(data);
+    const { data } = await client(req).patch(`/roster/shifts/${req.params.id}`, toBackend(req.body));
+    res.json(toUi(data));
   } catch (err) {
     next(err);
   }

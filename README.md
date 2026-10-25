@@ -1,8 +1,8 @@
 # Todo Productivity Suite - Full Stack Application
 
-Complete full-stack todo management application with real-time sync, AI assistance, and productivity tracking.
+Full-stack, AI-assisted daily planning and focus tracking. Users review and approve a proposed schedule; the planner does not silently change an active plan.
 
-**Stack:** React • Next.js • TypeScript • Node.js • Java Spring Boot • PostgreSQL
+**Stack:** React/Vite • TypeScript • Express • Java Spring Boot • PostgreSQL
 
 ---
 
@@ -14,12 +14,7 @@ Complete full-stack todo management application with real-time sync, AI assistan
 │   ├── UI/              # React/Vite Frontend (port 3002)
 │   ├── Middleware/      # Node.js Express API (port 3001)
 │   └── Backend/         # Java Spring Boot Service (port 8080)
-├── packages/
-│   ├── frontend/        # Original frontend source
-│   ├── middleware/      # Original middleware source
-│   └── shared/          # Shared TypeScript types
-├── services/
-│   └── backend/         # Original backend source
+├── packages/shared/     # Shared TypeScript types
 ├── start-dev.sh         # Run all services (Linux/Mac)
 ├── start-dev.bat        # Run all services (Windows)
 ├── docker-compose.yml   # Docker deployment
@@ -32,27 +27,14 @@ Complete full-stack todo management application with real-time sync, AI assistan
 
 ## 🚀 Quick Start
 
-### Automatic (All Services)
+### Docker Compose
 ```bash
-# Linux/Mac
-chmod +x start-dev.sh
-./start-dev.sh
-
-# Windows
-start-dev.bat
+cp .env.example .env
+# Set POSTGRES_PASSWORD, JWT_ACCESS_SECRET (at least 32 random characters),
+# and NVIDIA_API_KEY in .env before starting.
+docker compose up --build -d
 ```
-
-### Manual (Separate Terminals)
-```bash
-./start-backend.sh    # Terminal 1
-./start-middleware.sh # Terminal 2
-./start-ui.sh        # Terminal 3
-```
-
-### Docker
-```bash
-docker-compose up -d
-```
+Open http://localhost:3002. Frontend API requests use the same origin and are proxied to the middleware. The backend and database are private to the Compose network. For a public domain, set `MIDDLEWARE_CORS_ORIGIN` to its exact HTTPS origin and terminate TLS at a trusted proxy.
 
 ---
 
@@ -62,16 +44,17 @@ docker-compose up -d
 |---------|-----|---------|
 | **Frontend** | http://localhost:3002 | React UI |
 | **Middleware** | http://localhost:3001 | Node.js API |
-| **Backend** | http://localhost:8080/api | Java REST API |
+| **Backend** | internal in Docker Compose; http://localhost:8080/api when run locally | Java REST API |
 
 ---
 
 ## ✅ Verify Setup
 
 ```bash
-curl http://localhost:8080/api/actuator/health
 curl http://localhost:3001/health
 curl http://localhost:3002
+# For a locally run backend only:
+curl http://localhost:8080/api/actuator/health
 ```
 
 ---
@@ -82,7 +65,7 @@ curl http://localhost:3002
 - Java 21+
 - Maven 3.9+
 - PostgreSQL 16+
-- Docker (optional)
+- Docker Compose (recommended); local development additionally needs PostgreSQL 16+
 
 ---
 
@@ -123,9 +106,11 @@ Each folder is self-contained and ready for deployment.
 - ✅ Health metrics
 - ✅ Focus sessions (Pomodoro)
 - ✅ AI-powered assistance
-- ✅ Real-time notifications
-- ✅ Data analytics
+- ✅ In-app notifications (polled), including behind-plan replan suggestions
+- ✅ Actual-time focus analytics and on-demand AI reports
+- ✅ User-local daily, weekly, and monthly AI report notifications when NVIDIA is configured
+- ✅ Fixed commitments and roster shifts in daily proposals
 
 ---
 
-**Ready to deploy!**
+Before an internet-facing release, configure TLS, backups, monitoring, a real NVIDIA key, and rotate any credentials previously committed to Git history. Historical Career CRM tables remain in old Flyway migrations to preserve production migration checksums and existing data; active Career CRM routes and UI are removed. See [DEPLOYMENT.md](./DEPLOYMENT.md) for operational guidance.

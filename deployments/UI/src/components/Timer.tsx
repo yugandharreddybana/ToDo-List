@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { useStartSession, useCompleteSession, useSessions } from '../hooks/useSessions';
 import type { SessionType } from '../hooks/useSessions';
+import { useTasks, useUpdateTaskStatus } from '../hooks/useTasks';
+import { useSettingsStore } from '../stores/settings.store';
 
 /* ─── Map visual types to API SessionType ────────────────────── */
 type VisualMode = 'FOCUS' | 'SHORT_BREAK' | 'LONG_BREAK';
@@ -58,12 +60,15 @@ function RingTimer({ progress, color, size = 260, stroke = 12 }: {
 
 /* ─── Main Timer ─────────────────────────────────────────────── */
 export default function Timer() {
+  const settings = useSettingsStore();
   const startSession = useStartSession();
   const completeSession = useCompleteSession();
   const { data: sessions } = useSessions();
+  const { data: tasks = [] } = useTasks();
+  const completeTask = useUpdateTaskStatus();
 
   const [mode, setMode] = useState<VisualMode>('FOCUS');
-  const [customDurations, setCustomDurations] = useState<Record<VisualMode, number>>(DEFAULT_DURATIONS);
+  const [customDurations, setCustomDurations] = useState<Record<VisualMode, number>>({ FOCUS: settings.pomodoroWorkMinutes, SHORT_BREAK: settings.pomodoroBreakMinutes, LONG_BREAK: settings.pomodoroLongBreakMinutes });
   const [showSettings, setShowSettings] = useState(false);
   const [draftDurations, setDraftDurations] = useState<Record<VisualMode, number>>(DEFAULT_DURATIONS);
 
@@ -71,13 +76,43 @@ export default function Timer() {
   const [timeLeft, setTimeLeft] = useState(totalSeconds);
   const [isRunning, setIsRunning] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [taskId, setTaskId] = useState('');
+  const [error, setError] = useState('');
   const [completedCount, setCompletedCount] = useState(0);
   const [justCompleted, setJustCompleted] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const deadlineRef = useRef<number | null>(null);
+  const finishingRef = useRef(false);
+  const recoveredRef = useRef(false);
+
+  useEffect(() => {
+    if (recoveredRef.current || !sessions) return;
+    recoveredRef.current = true;
+    const active = sessions.find(session => !session.endTime);
+    if (!active || sessionId) return;
+    const recoveredMode: VisualMode = active.type === 'SHORT_BREAK' ? 'SHORT_BREAK' : active.type === 'LONG_BREAK' ? 'LONG_BREAK' : 'FOCUS';
+    let saved: { sessionId?: string; timeLeft?: number } | null = null;
+    try { saved = JSON.parse(sessionStorage.getItem('tps-active-timer') ?? 'null'); } catch { /* ignore stale state */ }
+    setCustomDurations(current => ({ ...current, [recoveredMode]: active.durationMinutes }));
+    setMode(recoveredMode);
+    setTaskId(active.taskId ?? '');
+    setTimeLeft(saved?.sessionId === active.id && typeof saved.timeLeft === 'number' ? Math.max(0, Math.min(active.durationMinutes * 60, saved.timeLeft)) : active.durationMinutes * 60);
+    setSessionId(active.id);
+    setIsRunning(false);
+    setError('An unfinished session was recovered and paused. Time while the app was closed was not counted; resume, finish, or reset it.');
+  }, [sessions, sessionId]);
+
+  useEffect(() => {
+    if (!recoveredRef.current) return;
+    if (sessionId) sessionStorage.setItem('tps-active-timer', JSON.stringify({ sessionId, timeLeft, mode, taskId }));
+    else sessionStorage.removeItem('tps-active-timer');
+  }, [sessionId, timeLeft, mode, taskId]);
 
   /* Reset when mode or duration changes */
   useEffect(() => {
+    if (sessionId) return;
     clearInterval(intervalRef.current!);
+    deadlineRef.current = null;
     setIsRunning(false);
     setTimeLeft(customDurations[mode] * 60);
     setJustCompleted(false);
@@ -86,66 +121,78 @@ export default function Timer() {
   /* Tick */
   useEffect(() => {
     if (isRunning) {
+      deadlineRef.current = Date.now() + timeLeft * 1000;
       intervalRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(intervalRef.current!);
-            setIsRunning(false);
-            handleComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
+        const remaining = Math.max(0, Math.ceil(((deadlineRef.current ?? Date.now()) - Date.now()) / 1000));
+        setTimeLeft(remaining);
+        if (remaining === 0 && !finishingRef.current) {
+          setIsRunning(false);
+          void handleComplete(totalSeconds);
+        }
       }, 1000);
     } else {
       clearInterval(intervalRef.current!);
     }
     return () => clearInterval(intervalRef.current!);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRunning]);
+  }, [isRunning, sessionId, mode, totalSeconds]);
 
   /* Page title */
   useEffect(() => {
     document.title = isRunning
-      ? `${formatTime(timeLeft)} · ${MODE_META[mode].label} — Nexus`
-      : 'Nexus Productivity Suite';
-    return () => { document.title = 'Nexus Productivity Suite'; };
+      ? `${formatTime(timeLeft)} · ${MODE_META[mode].label} — Productivity Suite`
+      : 'Productivity Suite';
+    return () => { document.title = 'Productivity Suite'; };
   }, [timeLeft, isRunning, mode]);
 
   async function handleStart() {
+    if (sessionId) { if (timeLeft > 0) setIsRunning(true); return; }
     try {
       const result = await startSession.mutateAsync({
         type: MODE_TO_API[mode],
         durationMinutes: customDurations[mode],
+        taskId: mode === 'FOCUS' && taskId ? taskId : undefined,
       });
       setSessionId(result?.id ?? null);
+      setIsRunning(true);
+      setError('');
     } catch {
-      setSessionId(null);
+      setError('Could not save the session. Please try again.');
     }
-    setIsRunning(true);
     setJustCompleted(false);
   }
 
-  function handlePause() { setIsRunning(false); }
+  function handlePause() {
+    if (deadlineRef.current) setTimeLeft(Math.max(0, Math.ceil((deadlineRef.current - Date.now()) / 1000)));
+    setIsRunning(false);
+  }
 
-  function handleReset() {
+  async function handleReset() {
     clearInterval(intervalRef.current!);
     setIsRunning(false);
+    if (sessionId) {
+      try { await completeSession.mutateAsync({ id: sessionId, actualSeconds: totalSeconds - timeLeft, completed: false }); }
+      catch { setError('Could not save interrupted focus time.'); return; }
+    }
     setTimeLeft(customDurations[mode] * 60);
     setSessionId(null);
     setJustCompleted(false);
   }
 
-  async function handleComplete() {
+  async function handleComplete(actualSeconds = totalSeconds - timeLeft): Promise<boolean> {
+    if (finishingRef.current) return false;
+    finishingRef.current = true;
+    setIsRunning(false);
     if (sessionId) {
       try {
-        await completeSession.mutateAsync({ id: sessionId });
-      } catch { /* non-critical */ }
+        await completeSession.mutateAsync({ id: sessionId, actualSeconds });
+      } catch { setError('Session could not be completed. Please retry.'); finishingRef.current = false; return false; }
     }
     setCompletedCount((c) => c + 1);
     setJustCompleted(true);
     setSessionId(null);
-    try {
+    finishingRef.current = false;
+    if (settings.soundEnabled) try {
       const ctx = new AudioContext();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -157,10 +204,13 @@ export default function Timer() {
       osc.start();
       osc.stop(ctx.currentTime + 0.8);
     } catch { /* ignore */ }
+    return true;
   }
 
   function saveSettings() {
+    if (sessionId) { setError('Finish or reset the current session before changing durations.'); return; }
     setCustomDurations({ ...draftDurations });
+    settings.setPomodoroSettings({ workMinutes: draftDurations.FOCUS, breakMinutes: draftDurations.SHORT_BREAK, longBreakMinutes: draftDurations.LONG_BREAK });
     setShowSettings(false);
   }
 
@@ -191,6 +241,7 @@ export default function Timer() {
         </div>
         <button
           onClick={() => { setDraftDurations({ ...customDurations }); setShowSettings((v) => !v); }}
+          disabled={!!sessionId}
           style={{
             display: 'flex', alignItems: 'center', gap: '0.5rem',
             padding: '0.5rem 0.875rem', borderRadius: '0.625rem',
@@ -262,10 +313,18 @@ export default function Timer() {
       </AnimatePresence>
 
       {/* ── Mode Selector ── */}
+      {error && <p role="alert" style={{ color: '#f87171' }}>{error}</p>}
+      {mode === 'FOCUS' && <label style={{ display: 'block', marginBottom: 16, color: 'rgba(255,255,255,.8)' }}>Focus task
+        <select value={taskId} disabled={!!sessionId} onChange={e => setTaskId(e.target.value)} style={{ display: 'block', width: '100%', marginTop: 6, padding: 10, background: '#222035', color: 'white', borderRadius: 8 }}>
+          <option value="">No specific task</option>
+          {tasks.filter(t => t.status !== 'DONE' && t.status !== 'CANCELLED').map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+        </select>
+      </label>}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', background: 'rgba(255,255,255,0.04)', borderRadius: '0.875rem', padding: '0.375rem' }}>
         {(Object.entries(MODE_META) as [VisualMode, typeof MODE_META[VisualMode]][]).map(([m, info]) => (
           <button
             key={m}
+            disabled={!!sessionId}
             onClick={() => setMode(m)}
             style={{
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
@@ -381,6 +440,8 @@ export default function Timer() {
             </span>
           </div>
         </div>
+        {sessionId && mode === 'FOCUS' && taskId && <button onClick={async () => { if (await handleComplete()) { try { await completeTask.mutateAsync({ id: taskId, status: 'DONE' }); } catch { setError('Focus time was saved, but the task could not be marked complete. Please update the task manually.'); } } }} style={{ marginTop: 16, padding: '10px 14px', borderRadius: 8, border: 0, cursor: 'pointer' }}>Finish task and record focus time</button>}
+        {sessionId && <button onClick={() => { void handleComplete(); }} disabled={completeSession.isPending} style={{ marginTop: 16, padding: '10px 14px', borderRadius: 8, border: 0, cursor: 'pointer' }}>Finish session and record actual time</button>}
       </div>
 
       {/* ── Recent Sessions ── */}
@@ -406,7 +467,7 @@ export default function Timer() {
                   {info.label}
                 </span>
                 <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>
-                  {s.durationMinutes}m
+                  {s.endTime ? `${Math.round(s.actualSeconds / 60)}m actual` : `${s.durationMinutes}m planned`}
                 </span>
                 <span style={{ fontSize: '0.6875rem', color: s.completed ? '#4ade80' : 'rgba(255,255,255,0.25)', flexShrink: 0 }}>
                   {s.completed ? '✓ Done' : '—'}

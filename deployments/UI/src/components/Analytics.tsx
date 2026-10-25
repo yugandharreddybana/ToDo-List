@@ -3,13 +3,13 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar,
 } from 'recharts';
-import { useAnalyticsSummary, useHeatmap } from '../hooks/useAnalytics';
+import { useAnalyticsSummary, useHeatmap, useAIAnalyticsReport, type AnalyticsPeriod } from '../hooks/useAnalytics';
 import { Card, CardBody } from './ui/Card';
 import { Button } from './ui/Button';
 import { Skeleton } from './ui/Skeleton';
 import { ProgressBar } from './ui/ProgressBar';
 
-type Period = 'week' | 'month' | 'year';
+type Period = AnalyticsPeriod;
 
 const HEATMAP_COLORS = ['var(--bg-primary)', 'color-mix(in srgb, var(--accent-primary) 25%, transparent)', 'color-mix(in srgb, var(--accent-primary) 50%, transparent)', 'color-mix(in srgb, var(--accent-primary) 75%, transparent)', 'var(--accent-primary)'];
 
@@ -78,20 +78,30 @@ function Heatmap() {
 
 export default function Analytics() {
   const [period, setPeriod] = useState<Period>('week');
-  const { data: summary, isLoading } = useAnalyticsSummary(period);
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const { data: summary, isLoading, error } = useAnalyticsSummary(period, period === 'custom' ? from : undefined, period === 'custom' ? to : undefined);
+  const report = useAIAnalyticsReport();
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Analytics</h1>
         <div style={{ display: 'flex', gap: '0.375rem' }}>
-          {(['week', 'month', 'year'] as Period[]).map((p) => (
+          {(['day', 'week', 'month', 'quarter', 'year', 'custom'] as Period[]).map((p) => (
             <Button key={p} variant={period === p ? 'primary' : 'ghost'} size="sm" onClick={() => setPeriod(p)}>
               {p.charAt(0).toUpperCase() + p.slice(1)}
             </Button>
           ))}
         </div>
       </div>
+
+      {period === 'custom' && <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+        <label>From <input type="date" value={from} onChange={e => setFrom(e.target.value)} /></label>
+        <label>To <input type="date" value={to} onChange={e => setTo(e.target.value)} /></label>
+      </div>}
+      {error && <p role="alert" style={{ color: '#f87171' }}>Could not load analytics for this period. Check the date range.</p>}
+      {summary && <p style={{ color: 'var(--text-muted)' }}>Measured {summary.fromDate} to {summary.toDate}. Focus time uses actual logged seconds.</p>}
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
@@ -105,7 +115,6 @@ export default function Analytics() {
               sub={`${summary?.pomodoroSessions ?? 0} pomodoros`} />
             <StatCard label="Active Goals" value={summary?.activeGoals ?? 0}
               sub={`${Math.round(summary?.avgGoalProgress ?? 0)}% avg`} />
-            <StatCard label="Applications" value={summary?.careerApplications ?? 0} />
           </>
         )}
       </div>
@@ -171,6 +180,24 @@ export default function Analytics() {
           </CardBody>
         </Card>
       </div>
+
+      <Card><CardBody>
+        <h3>Focus by day</h3>
+        <ResponsiveContainer width="100%" height={180}><BarChart data={summary?.focusMinutesByDay ?? []}><XAxis dataKey="date" tick={{ fontSize: 10 }} /><YAxis /><Tooltip /><Bar dataKey="count" fill="#22c55e" /></BarChart></ResponsiveContainer>
+        <h3>Focus by task</h3>
+        {summary?.focusByTask?.length ? summary.focusByTask.map(task => <p key={task.taskId}>{task.title}: {task.actualMinutes} min across {task.sessions} session(s)</p>) : <p>No task-linked focus sessions in this period.</p>}
+      </CardBody></Card>
+
+      <Card><CardBody>
+        <h3>AI performance analysis</h3>
+        <p>Generate an evidence-based explanation for the selected period.</p>
+        <Button onClick={() => report.mutate({ period, from: period === 'custom' ? from : undefined, to: period === 'custom' ? to : undefined })} disabled={report.isPending || !summary}>Analyze this period</Button>
+        {report.isError && <p role="alert" style={{ color: '#f87171' }}>Analysis is unavailable right now.</p>}
+        {report.data && <div><h4>Rating: {report.data.rating}/10</h4><p>{report.data.explanation}</p>
+          <strong>What went well</strong><ul>{report.data.wentWell.map((item, i) => <li key={i}>{item}</li>)}</ul>
+          <strong>What to improve</strong><ul>{report.data.improve.map((item, i) => <li key={i}>{item}</li>)}</ul>
+          <strong>Next steps</strong><ul>{report.data.nextSteps.map((item, i) => <li key={i}>{item}</li>)}</ul></div>}
+      </CardBody></Card>
 
       {/* Heatmap */}
       <Card>

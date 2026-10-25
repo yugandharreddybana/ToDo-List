@@ -17,6 +17,4 @@ COPY --from=builder /app/target/backend-*.jar app.jar
 
 EXPOSE 8080
 
-ENV JAVA_OPTS="-Dspring.config.location=file:./application.properties"
-
 ENTRYPOINT ["java", "-jar", "app.jar"]

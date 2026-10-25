@@ -16,9 +16,19 @@ public class AnalyticsSummaryResponse {
     private int pomodoroSessions;
     private int activeGoals;
     private double avgGoalProgress;
-    private int careerApplications;
     private List<DailyCount> taskCompletionByDay;
     private List<DailyCount> focusMinutesByDay;
+    private String fromDate;
+    private String toDate;
+    private List<TaskFocus> focusByTask;
+
+    @Data @Builder
+    public static class TaskFocus {
+        private String taskId;
+        private String title;
+        private int actualMinutes;
+        private int sessions;
+    }
 
     @Data @Builder
     public static class DailyCount {

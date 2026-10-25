@@ -4,7 +4,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Accept VITE build args (Vite bakes env vars at build time)
-ARG VITE_API_BASE_URL=http://localhost:3001
+ARG VITE_API_BASE_URL=
 ARG VITE_APP_NAME="Productivity Suite"
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_APP_NAME=$VITE_APP_NAME
@@ -16,16 +16,8 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:20-alpine
-
-WORKDIR /app
-
-RUN npm install -g serve
-
-COPY --from=builder /app/dist ./dist
-
-EXPOSE 3002
-
-ENV NODE_ENV=production
-
-CMD ["serve", "-s", "dist", "-l", "3002"]
+FROM nginx:1.27-alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=3s CMD wget -q -O /dev/null http://127.0.0.1/ || exit 1

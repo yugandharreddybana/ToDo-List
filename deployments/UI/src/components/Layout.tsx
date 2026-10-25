@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  LayoutDashboard, CheckSquare, Timer, Target, Briefcase,
+  LayoutDashboard, CheckSquare, Timer, Target,
   Heart, BarChart2, Bot, Calendar, Settings, LogOut, Menu, X, Bell, Zap,
 } from 'lucide-react';
 import { useAuthStore } from '../stores/auth.store';
@@ -11,9 +11,9 @@ import { useUnreadCount } from '../hooks/useNotifications';
 const NAV = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard', color: '#8b5cf6' },
   { path: '/tasks', icon: CheckSquare, label: 'Tasks', color: '#3b82f6' },
+  { path: '/plan', icon: Calendar, label: 'Daily Plan', color: '#a78bfa' },
   { path: '/timer', icon: Timer, label: 'Focus', color: '#06b6d4' },
   { path: '/goals', icon: Target, label: 'Goals', color: '#10b981' },
-  { path: '/career', icon: Briefcase, label: 'Career', color: '#f59e0b' },
   { path: '/health', icon: Heart, label: 'Health', color: '#f43f5e' },
   { path: '/analytics', icon: BarChart2, label: 'Analytics', color: '#ec4899' },
   { path: '/ai', icon: Bot, label: 'AI Coach', color: '#8b5cf6' },
@@ -196,7 +196,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           position: 'relative', zIndex: 10,
         }}>
           <div style={{ flex: 1 }} />
-          <NavLink to="/settings" style={{ position: 'relative', display: 'flex', color: 'var(--text-muted)', transition: 'var(--transition)' }}
+          <NavLink to="/notifications" aria-label="Notifications" style={{ position: 'relative', display: 'flex', color: 'var(--text-muted)', transition: 'var(--transition)' }}
             onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-primary)')}
             onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = 'var(--text-muted)')}
           >

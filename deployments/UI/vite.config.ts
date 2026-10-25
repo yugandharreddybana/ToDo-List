@@ -5,7 +5,7 @@ import { defineConfig, loadEnv } from 'vite';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const apiBase = env.VITE_API_BASE_URL ?? 'http://localhost:3001/api';
+  const apiBase = env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
   return {
     plugins: [react(), tailwindcss()],
@@ -14,10 +14,6 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, 'src'),
         '@tps/shared': path.resolve(__dirname, '../../packages/shared/src'),
       },
-    },
-    optimizeDeps: {
-      // Exclude pdfjs-dist from pre-bundling so its worker resolves correctly
-      exclude: ['pdfjs-dist'],
     },
     server: {
       port: 3002,
@@ -33,13 +29,6 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: 'dist',
       sourcemap: mode !== 'production',
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            pdfjs: ['pdfjs-dist'],
-          },
-        },
-      },
     },
   };
 });

@@ -11,4 +11,5 @@ import java.util.UUID;
 public interface HabitLogRepository extends JpaRepository<HabitLog, UUID> {
     Optional<HabitLog> findByHabitIdAndLogDate(UUID habitId, LocalDate date);
     List<HabitLog> findByHabitIdOrderByLogDateDesc(UUID habitId);
+    List<HabitLog> findByHabitUserIdAndLogDateBetween(UUID userId, LocalDate from, LocalDate to);
 }

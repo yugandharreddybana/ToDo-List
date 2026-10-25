@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/analytics")
@@ -20,9 +21,11 @@ public class AnalyticsController {
     @GetMapping("/summary")
     public ResponseEntity<AnalyticsSummaryResponse> summary(
         @AuthenticationPrincipal UserDetails p,
-        @RequestParam(defaultValue = "week") String period
+        @RequestParam(defaultValue = "week") String period,
+        @RequestParam(required = false) LocalDate from,
+        @RequestParam(required = false) LocalDate to
     ) {
-        return ResponseEntity.ok(analyticsService.summary(uid(p), period));
+        return ResponseEntity.ok(analyticsService.summary(uid(p), period, from, to));
     }
 
     @GetMapping("/productivity-heatmap")
@@ -33,9 +36,11 @@ public class AnalyticsController {
     @GetMapping("/focus-time")
     public ResponseEntity<AnalyticsSummaryResponse> focusTime(
         @AuthenticationPrincipal UserDetails p,
-        @RequestParam(defaultValue = "week") String period
+        @RequestParam(defaultValue = "week") String period,
+        @RequestParam(required = false) LocalDate from,
+        @RequestParam(required = false) LocalDate to
     ) {
-        return ResponseEntity.ok(analyticsService.summary(uid(p), period));
+        return ResponseEntity.ok(analyticsService.summary(uid(p), period, from, to));
     }
 
     private UUID uid(UserDetails p) { return UUID.fromString(p.getUsername()); }

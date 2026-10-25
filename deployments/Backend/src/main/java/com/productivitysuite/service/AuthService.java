@@ -26,11 +26,14 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final PlanningService events;
 
     @Value("${app.jwt.refresh-ttl-seconds:604800}")
     private long refreshTtlSeconds;
 
     public AuthResponse register(RegisterRequest req) {
+        try { java.time.ZoneId.of(req.getTimezone()); }
+        catch (java.time.DateTimeException ex) { throw new IllegalArgumentException("Invalid timezone"); }
         if (userRepository.existsByEmail(req.getEmail())) {
             throw new ConflictException("Email already registered: " + req.getEmail());
         }
@@ -41,6 +44,7 @@ public class AuthService {
             .timezone(req.getTimezone())
             .build();
         user = userRepository.save(user);
+        events.record(user.getId(), "auth.registered", "user", user.getId(), java.util.Map.of());
         return buildAuthResponse(user);
     }
 
@@ -50,6 +54,7 @@ public class AuthService {
         if (!passwordEncoder.matches(req.getPassword(), user.getPasswordHash())) {
             throw new UnauthorizedException("Invalid credentials");
         }
+        events.record(user.getId(), "auth.login", "user", user.getId(), java.util.Map.of());
         return buildAuthResponse(user);
     }
 
@@ -62,11 +67,13 @@ public class AuthService {
             throw new UnauthorizedException("Refresh token expired");
         }
         refreshTokenRepository.delete(stored);
+        events.record(stored.getUser().getId(), "auth.refreshed", "user", stored.getUser().getId(), java.util.Map.of());
         return buildAuthResponse(stored.getUser());
     }
 
     public void logout(UUID userId) {
         refreshTokenRepository.deleteAllByUserId(userId);
+        events.record(userId, "auth.logout", "user", userId, java.util.Map.of());
     }
 
     private AuthResponse buildAuthResponse(User user) {
@@ -85,6 +92,7 @@ public class AuthService {
             .name(user.getName())
             .avatarUrl(user.getAvatarUrl())
             .timezone(user.getTimezone())
+            .notificationsEnabled(user.isNotificationsEnabled())
             .accessToken(accessToken)
             .refreshToken(rawRefresh)
             .accessTokenExpiresAt(jwtService.accessTokenExpiresAt())
