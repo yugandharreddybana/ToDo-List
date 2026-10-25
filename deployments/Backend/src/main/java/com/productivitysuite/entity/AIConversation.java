@@ -28,6 +28,9 @@ public class AIConversation {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(length = 200)
+    private String title;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
     @Builder.Default

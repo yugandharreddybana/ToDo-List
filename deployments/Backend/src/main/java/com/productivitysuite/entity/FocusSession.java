@@ -36,6 +36,15 @@ public class FocusSession {
     @Column(name = "duration_minutes", nullable = false)
     private int durationMinutes;
 
+    @Column(name = "actual_seconds", nullable = false)
+    private int actualSeconds;
+
+    @Column(nullable = false)
+    private boolean completed;
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 15)
     @Builder.Default

@@ -1,5 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
+import { useMutation } from '@tanstack/react-query';
+
+export type AnalyticsPeriod = 'day' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
 
 export interface DailyCount {
   date: string;
@@ -14,9 +17,11 @@ export interface AnalyticsSummary {
   pomodoroSessions: number;
   activeGoals: number;
   avgGoalProgress: number;
-  careerApplications: number;
   taskCompletionByDay: DailyCount[];
   focusMinutesByDay: DailyCount[];
+  fromDate: string;
+  toDate: string;
+  focusByTask: { taskId: string; title: string; actualMinutes: number; sessions: number }[];
 }
 
 export interface HeatmapCell {
@@ -31,16 +36,23 @@ export interface Heatmap {
 
 const ANALYTICS_KEY = 'analytics';
 
-export function useAnalyticsSummary(period: 'week' | 'month' | 'year' = 'week') {
+export function useAnalyticsSummary(period: AnalyticsPeriod = 'week', from?: string, to?: string) {
   return useQuery({
-    queryKey: [ANALYTICS_KEY, 'summary', period],
+    queryKey: [ANALYTICS_KEY, 'summary', period, from, to],
     queryFn: async () => {
       const { data } = await api.get<AnalyticsSummary>('/api/analytics/summary', {
-        params: { period },
+        params: { period, from, to },
       });
       return data;
     },
+    enabled: period !== 'custom' || Boolean(from && to),
   });
+}
+
+export interface AIAnalyticsReport { rating: number; wentWell: string[]; improve: string[]; nextSteps: string[]; explanation: string; fromDate: string; toDate: string; }
+export function useAIAnalyticsReport() {
+  return useMutation({ mutationFn: async (range: { period: AnalyticsPeriod; from?: string; to?: string }) =>
+    (await api.post<AIAnalyticsReport>('/api/analytics/report', range)).data });
 }
 
 export function useHeatmap() {

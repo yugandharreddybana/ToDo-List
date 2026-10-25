@@ -14,16 +14,16 @@ import { Modal } from './ui/Modal';
 import { ProgressBar } from './ui/ProgressBar';
 import { Skeleton } from './ui/Skeleton';
 
-const CATEGORY_OPTIONS: GoalCategory[] = ['CAREER', 'HEALTH', 'LEARNING', 'PERSONAL', 'FINANCE', 'OTHER'];
-const STATUS_OPTIONS: GoalStatus[] = ['ACTIVE', 'COMPLETED', 'PAUSED', 'CANCELLED'];
+const CATEGORY_OPTIONS: GoalCategory[] = ['CAREER', 'HEALTH', 'LEARNING', 'PERSONAL', 'FINANCIAL'];
+const STATUS_OPTIONS: GoalStatus[] = ['ACTIVE', 'COMPLETED', 'PAUSED', 'ARCHIVED'];
 
 const STATUS_COLOR: Record<GoalStatus, 'primary' | 'success' | 'warning' | 'danger'> = {
-  ACTIVE: 'primary', COMPLETED: 'success', PAUSED: 'warning', CANCELLED: 'danger',
+  ACTIVE: 'primary', COMPLETED: 'success', PAUSED: 'warning', ARCHIVED: 'danger',
 };
 const CATEGORY_COLOR: Record<GoalCategory, string> = {
   CAREER: 'var(--accent-primary)', HEALTH: 'var(--accent-coral)',
   LEARNING: 'var(--accent-purple)', PERSONAL: 'var(--accent-amber)',
-  FINANCE: 'var(--accent-green)', OTHER: 'var(--text-muted)',
+  FINANCIAL: 'var(--accent-green)',
 };
 
 function GoalCard({ goal }: { goal: Goal }) {

@@ -12,14 +12,15 @@ import { Badge } from './ui/Badge';
 import { Modal } from './ui/Modal';
 import { Skeleton } from './ui/Skeleton';
 
-const SHIFT_TYPES: ShiftType[] = ['MORNING', 'AFTERNOON', 'EVENING', 'NIGHT', 'CUSTOM'];
+const SHIFT_TYPES: ShiftType[] = ['MORNING', 'DAY', 'EVENING', 'NIGHT', 'ON_CALL', 'OFF'];
 
 const SHIFT_COLOR: Record<ShiftType, string> = {
   MORNING: 'var(--accent-amber)',
-  AFTERNOON: 'var(--accent-primary)',
+  DAY: 'var(--accent-primary)',
   EVENING: 'var(--accent-purple)',
   NIGHT: 'var(--text-secondary)',
-  CUSTOM: 'var(--accent-green)',
+  ON_CALL: 'var(--accent-green)',
+  OFF: 'var(--text-muted)',
 };
 
 interface ShiftForm {
@@ -41,7 +42,7 @@ function startOfWeek(d: Date): Date {
 }
 
 function formatDate(d: Date): string {
-  return d.toISOString().split('T')[0];
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function hourDuration(start: string, end: string): number {

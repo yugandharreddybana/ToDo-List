@@ -1,6 +1,6 @@
 # Implementation Completeness Audit
 
-**Status: ✅ 100% COMPLETE - All features fully implemented**
+**Archived audit (April 2026). Not a current release or security assessment. See README.md.**
 
 Date: April 21, 2026
 
@@ -8,12 +8,9 @@ Date: April 21, 2026
 
 ## 📊 Executive Summary
 
-The Todo Productivity Suite is **fully implemented** with no missing functionality. All features are production-ready.
+This historical audit predates the adaptive planner and its production checks; the completion claims below are not current.
 
-- ✅ **Backend:** 100% complete (8 services, 40+ endpoints)
-- ✅ **Middleware:** 100% complete (11 route modules, 74 endpoints)
-- ✅ **Frontend:** 100% complete (12 major components)
-- ✅ **Database:** 100% complete (17 entities, 12 migrations)
+- Historical inventory only; current service and endpoint counts differ.
 - ✅ **No incomplete code markers** (0 unimplemented methods)
 - ✅ **No empty files** (all files have meaningful content)
 
@@ -45,7 +42,6 @@ The Todo Productivity Suite is **fully implemented** with no missing functionali
 ### Advanced Features
 | Feature | Backend | Middleware | Frontend | Status |
 |---------|---------|-----------|----------|--------|
-| **Career CRM** | ✓ | ✓ | ✓ | Complete |
 | **Roster/Shift Management** | ✓ | ✓ | ✓ | Complete |
 | **User Profiles & Settings** | ✓ | ✓ | ✓ | Complete |
 | **JWT Authentication** | ✓ | ✓ | ✓ | Complete |
@@ -61,7 +57,6 @@ The Todo Productivity Suite is **fully implemented** with no missing functionali
 3. **GoalService** - Goal management with milestones
 4. **HealthService** - Health metrics tracking
 5. **FocusSessionService** - Pomodoro/focus session management
-6. **CareerService** - Career CRM functionality
 7. **AnalyticsService** - Data aggregation and reporting
 8. **NotificationService** - User notifications
 
@@ -71,7 +66,6 @@ The Todo Productivity Suite is **fully implemented** with no missing functionali
 - GoalController (7 endpoints)
 - HealthController (5 endpoints)
 - FocusSessionController (3 endpoints)
-- CareerController (6 endpoints)
 - AnalyticsController (3 endpoints)
 - NotificationController (3 endpoints)
 - UserController (included)
@@ -85,7 +79,6 @@ The Todo Productivity Suite is **fully implemented** with no missing functionali
 - FocusSession
 - HealthLog
 - Habit, HabitLog
-- CareerApplication, CareerContact
 - Notification
 - AIConversation
 - RosterShift
@@ -114,7 +107,6 @@ The Todo Productivity Suite is **fully implemented** with no missing functionali
 | **tasks.routes.ts** | 14 | ✓ Complete |
 | **goals.routes.ts** | 10 | ✓ Complete |
 | **health.routes.ts** | 10 | ✓ Complete |
-| **career.routes.ts** | 9 | ✓ Complete |
 | **ai.routes.ts** | 7 | ✓ Complete |
 | **auth.routes.ts** | 5 | ✓ Complete |
 | **sessions.routes.ts** | 5 | ✓ Complete |
@@ -127,7 +119,7 @@ The Todo Productivity Suite is **fully implemented** with no missing functionali
 
 ### Services (3 total)
 1. **TokenService** - JWT token generation and validation
-2. **AIService** - AI integration (Anthropic API)
+2. **AIService** - Historical AI integration; current provider is NVIDIA NIM
 3. **BackendClient** - HTTP client for backend communication
 
 ### Features
@@ -190,11 +182,6 @@ The Todo Productivity Suite is **fully implemented** with no missing functionali
    - Performance metrics
    - Export functionality
 
-8. **CareerCRM** (281 lines)
-   - Company tracking
-   - Contact management
-   - Application status
-   - Interview notes
 
 #### Supporting Components (24 utility)
 - UI components (buttons, inputs, modals)
@@ -246,9 +233,7 @@ The Todo Productivity Suite is **fully implemented** with no missing functionali
 **Health & Wellness:**
 - `health_logs` - Health metrics
 
-**Career:**
-- `career_applications` - Job applications
-- `career_contacts` - Professional contacts
+Historical Career tables are retained solely for Flyway checksum and existing-data compatibility; no active feature uses them.
 
 **Communication:**
 - `notifications` - System notifications
@@ -263,7 +248,7 @@ The Todo Productivity Suite is **fully implemented** with no missing functionali
 - V2: Tasks & subtasks
 - V3: Focus sessions
 - V4: Goals
-- V5: Career
+- V5: Historical migration retained for checksum compatibility
 - V6: Health
 - V7: Roster
 - V8: Notifications
@@ -381,7 +366,6 @@ The Todo Productivity Suite is **fully implemented** with no missing functionali
 
 ### All Other Features
 - Analytics (2 endpoints)
-- Career (9 endpoints)
 - Focus Sessions (5 endpoints)
 - Roster (4 endpoints)
 - Notifications (4 endpoints)
@@ -404,7 +388,7 @@ The Todo Productivity Suite is **fully implemented** with no missing functionali
 - Error handling in place
 - Logging configured
 
-### ✅ Production Ready
+### Historical readiness checklist (not a current sign-off)
 - No hardcoded secrets (uses env vars)
 - Proper error messages
 - Security headers configured
@@ -439,7 +423,6 @@ The Todo Productivity Suite is **fully implemented** with no missing functionali
 - [x] Export functionality
 
 ### ✅ Advanced Features (Complete)
-- [x] Career CRM (applications, contacts)
 - [x] Roster/shift management
 - [x] AI-powered assistance
 - [x] Real-time notifications
@@ -461,7 +444,7 @@ The Todo Productivity Suite is **fully implemented** with no missing functionali
 
 ## 📦 Deployment Options
 
-All three deployment folders are **100% production-ready**:
+The three deployment folders existed at the time of this audit; see README.md for current deployment requirements.
 
 ### Option 1: Docker Compose
 ```bash
@@ -484,7 +467,7 @@ Status: ✅ Ready
 
 ## 🎓 Conclusion
 
-**The Todo Productivity Suite is COMPLETE and PRODUCTION-READY.**
+This historical conclusion has been superseded. See README.md and the current CI results.
 
 All features are implemented, tested, and ready for deployment. No functionality is missing or incomplete.
 

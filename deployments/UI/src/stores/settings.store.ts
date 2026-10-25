@@ -9,6 +9,10 @@ interface SettingsState {
   pomodoroBreakMinutes: number;
   pomodoroLongBreakMinutes: number;
   pomodoroSessionsBeforeLong: number;
+  planningWindowStart: string;
+  planningWindowEnd: string;
+  planningBufferMinutes: number;
+  askAboutCommitments: boolean;
   notificationsEnabled: boolean;
   soundEnabled: boolean;
   defaultTaskView: 'list' | 'board' | 'timeline';
@@ -26,6 +30,7 @@ interface SettingsState {
   setSoundEnabled: (enabled: boolean) => void;
   setDefaultTaskView: (view: 'list' | 'board' | 'timeline') => void;
   setWeekStartsOn: (day: 0 | 1 | 6) => void;
+  setPlanningSettings: (settings: { windowStart?: string; windowEnd?: string; bufferMinutes?: number; askAboutCommitments?: boolean }) => void;
   update: (patch: Partial<SettingsState>) => void;
 }
 
@@ -39,6 +44,10 @@ export const useSettingsStore = create<SettingsState>()(
       pomodoroBreakMinutes: 5,
       pomodoroLongBreakMinutes: 15,
       pomodoroSessionsBeforeLong: 4,
+      planningWindowStart: '06:00',
+      planningWindowEnd: '21:00',
+      planningBufferMinutes: 5,
+      askAboutCommitments: true,
       notificationsEnabled: true,
       soundEnabled: true,
       defaultTaskView: 'list',
@@ -57,6 +66,12 @@ export const useSettingsStore = create<SettingsState>()(
       setSoundEnabled: (soundEnabled) => set({ soundEnabled }),
       setDefaultTaskView: (view) => set({ defaultTaskView: view }),
       setWeekStartsOn: (day) => set({ weekStartsOn: day }),
+      setPlanningSettings: (s) => set(state => ({
+        planningWindowStart: s.windowStart ?? state.planningWindowStart,
+        planningWindowEnd: s.windowEnd ?? state.planningWindowEnd,
+        planningBufferMinutes: s.bufferMinutes ?? state.planningBufferMinutes,
+        askAboutCommitments: s.askAboutCommitments ?? state.askAboutCommitments,
+      })),
       update: (patch) => set(patch),
     }),
     {

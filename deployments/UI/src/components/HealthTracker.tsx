@@ -11,11 +11,12 @@ import {
   type HealthLog,
 } from '../hooks/useHealth';
 
-const TODAY = new Date().toISOString().split('T')[0];
+function localDate(d: Date) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+const TODAY = localDate(new Date());
 const WEEK_DATES = Array.from({ length: 7 }, (_, i) => {
   const d = new Date();
   d.setDate(d.getDate() - (6 - i));
-  return d.toISOString().split('T')[0];
+  return localDate(d);
 });
 
 /* ─── Utility ─────────────────────────────────────────────────── */
@@ -237,10 +238,6 @@ function TodayLogPanel() {
 
   const [log, setLog] = useState<Partial<HealthLog>>({
     logDate: TODAY,
-    sleepHours: 8,
-    waterMl: 2000,
-    stepsCount: 8000,
-    calories: 2000,
     weightKg: undefined,
   });
 
@@ -265,22 +262,22 @@ function TodayLogPanel() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
       <NeonSlider
-        icon={Moon} label="Sleep" value={log.sleepHours ?? 8} unit="h"
+        icon={Moon} label="Sleep" value={log.sleepHours ?? 0} unit="h"
         color="#a78bfa" max={12} step={0.5}
         onChange={(v) => setLog((l) => ({ ...l, sleepHours: v }))}
       />
       <NeonSlider
-        icon={Droplets} label="Water" value={log.waterMl ?? 2000} unit="ml"
+        icon={Droplets} label="Water" value={log.waterMl ?? 0} unit="ml"
         color="#38bdf8" max={4000} step={250}
         onChange={(v) => setLog((l) => ({ ...l, waterMl: v }))}
       />
       <NeonSlider
-        icon={Footprints} label="Steps" value={log.stepsCount ?? 8000} unit="steps"
+        icon={Footprints} label="Steps" value={log.stepsCount ?? 0} unit="steps"
         color="#34d399" max={15000} step={500}
         onChange={(v) => setLog((l) => ({ ...l, stepsCount: v }))}
       />
       <NeonSlider
-        icon={Flame} label="Calories" value={log.calories ?? 2000} unit="kcal"
+        icon={Flame} label="Calories" value={log.calories ?? 0} unit="kcal"
         color="#fb923c" max={3500} step={50}
         onChange={(v) => setLog((l) => ({ ...l, calories: v }))}
       />

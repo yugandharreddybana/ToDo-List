@@ -1,0 +1,16 @@
+import { Router, type Request } from 'express';
+import { backendAuthed } from '../services/backend.client.js';
+import { requireAuth } from '../middleware/auth.js';
+const router = Router();
+router.use(requireAuth);
+const client = (req: Request) => backendAuthed(req.headers.authorization!.slice(7));
+router.get('/commitments', async (req, res, next) => { try { res.json((await client(req).get('/planning/commitments')).data); } catch (e) { next(e); } });
+router.post('/commitments', async (req, res, next) => { try { res.status(201).json((await client(req).post('/planning/commitments', req.body)).data); } catch (e) { next(e); } });
+router.put('/commitments/:id', async (req, res, next) => { try { res.json((await client(req).put(`/planning/commitments/${req.params.id}`, req.body)).data); } catch (e) { next(e); } });
+router.delete('/commitments/:id', async (req, res, next) => { try { await client(req).delete(`/planning/commitments/${req.params.id}`); res.status(204).end(); } catch (e) { next(e); } });
+router.get('/plans', async (req, res, next) => { try { res.json((await client(req).get('/plans', { params: req.query })).data); } catch (e) { next(e); } });
+router.post('/plans', async (req, res, next) => { try { res.status(201).json((await client(req).post('/plans', req.body)).data); } catch (e) { next(e); } });
+router.post('/plans/:id/approve', async (req, res, next) => { try { res.json((await client(req).post(`/plans/${req.params.id}/approve`)).data); } catch (e) { next(e); } });
+router.post('/plans/:id/replan', async (req, res, next) => { try { res.json((await client(req).post(`/plans/${req.params.id}/replan`, req.body)).data); } catch (e) { next(e); } });
+router.post('/plans/energy', async (req, res, next) => { try { await client(req).post('/plans/energy', req.body); res.status(201).end(); } catch (e) { next(e); } });
+export default router;

@@ -43,6 +43,12 @@ public class HealthLog {
     @Column(name = "weight_kg", precision = 6, scale = 2)
     private BigDecimal weightKg;
 
+    @Column(name = "steps_count")
+    private Integer stepsCount;
+
+    @Column
+    private Integer calories;
+
     @Column(columnDefinition = "TEXT")
     private String notes;
 

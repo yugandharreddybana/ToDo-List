@@ -30,8 +30,8 @@ router.put('/profile', async (req: Request, res: Response, next: NextFunction) =
 
 router.put('/password', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { data } = await client(req).patch('/users/me', req.body);
-    res.json(data);
+    await client(req).patch('/users/me/password', req.body);
+    res.status(204).end();
   } catch (err) {
     next(err);
   }

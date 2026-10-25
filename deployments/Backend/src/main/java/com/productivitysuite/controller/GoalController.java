@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/goals")
@@ -37,13 +38,24 @@ public class GoalController {
         return ResponseEntity.ok(goalService.get(uid(p), id));
     }
 
-    @PatchMapping("/{id}")
+    @RequestMapping(value = "/{id}", method = {RequestMethod.PATCH, RequestMethod.PUT})
     public ResponseEntity<GoalResponse> update(
         @AuthenticationPrincipal UserDetails p,
         @PathVariable UUID id,
-        @Valid @RequestBody GoalRequest req
+        @Valid @RequestBody GoalPatchRequest req
     ) {
         return ResponseEntity.ok(goalService.update(uid(p), id, req));
+    }
+
+    @PatchMapping("/{id}/progress")
+    public GoalResponse progress(@AuthenticationPrincipal UserDetails p, @PathVariable UUID id, @RequestBody Map<String, Integer> body) {
+        if (body.get("progress") == null) throw new IllegalArgumentException("progress is required");
+        return goalService.updateProgress(uid(p), id, body.get("progress"));
+    }
+
+    @GetMapping("/{id}/milestones")
+    public List<GoalResponse.MilestoneResponse> milestones(@AuthenticationPrincipal UserDetails p, @PathVariable UUID id) {
+        return goalService.milestones(uid(p), id);
     }
 
     @DeleteMapping("/{id}")
@@ -66,9 +78,16 @@ public class GoalController {
         @AuthenticationPrincipal UserDetails p,
         @PathVariable UUID id,
         @PathVariable UUID mId,
-        @Valid @RequestBody MilestoneRequest req
+        @RequestBody Map<String, Boolean> req
     ) {
-        return ResponseEntity.ok(goalService.updateMilestone(uid(p), id, mId, req));
+        if (req.get("completed") == null) throw new IllegalArgumentException("completed is required");
+        return ResponseEntity.ok(goalService.setMilestoneCompleted(uid(p), id, mId, req.get("completed")));
+    }
+
+    @DeleteMapping("/{id}/milestones/{mId}")
+    public ResponseEntity<Void> deleteMilestone(@AuthenticationPrincipal UserDetails p, @PathVariable UUID id, @PathVariable UUID mId) {
+        goalService.deleteMilestone(uid(p), id, mId);
+        return ResponseEntity.noContent().build();
     }
 
     private UUID uid(UserDetails p) { return UUID.fromString(p.getUsername()); }

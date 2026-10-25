@@ -1,5 +1,7 @@
 # Todo Productivity Suite - Deployment Guide
 
+> The Docker Compose configuration in [README.md](./README.md) and [`docker-compose.yml`](./docker-compose.yml) is authoritative. Parts of this older guide describe standalone deployments and legacy environment names; verify them against the current service configuration before use. A real NVIDIA key, TLS termination, backups, monitoring, and rotation of credentials previously committed to Git history are required before public release.
+
 ## 📁 Structure
 
 ```
@@ -101,7 +103,7 @@ All tables are created in the `todo_list` schema via Flyway migrations.
 - task_comments
 - focus_sessions
 - goals
-- career
+- historical Career tables retained only for migration compatibility
 - health
 - roster
 - notifications

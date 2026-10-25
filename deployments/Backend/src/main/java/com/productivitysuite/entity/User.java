@@ -27,4 +27,8 @@ public class User extends BaseEntity {
     @Column(nullable = false, length = 80)
     @Builder.Default
     private String timezone = "UTC";
+
+    @Column(name = "notifications_enabled", nullable = false)
+    @Builder.Default
+    private boolean notificationsEnabled = true;
 }

@@ -1,5 +1,7 @@
 # Local Development Setup
 
+> This is a legacy local-development guide, not the production deployment path. For the current container stack, use the Docker Compose quick start in [README.md](./README.md) and the environment requirements in [DEPLOYMENT.md](./DEPLOYMENT.md). The standalone scripts and example credentials below require local configuration before use.
+
 ## 🚀 Quick Start (Recommended for First Time)
 
 ### Option A: Automated Setup (All-in-One)

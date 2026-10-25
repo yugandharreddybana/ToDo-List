@@ -16,6 +16,9 @@ public class SessionResponse {
     private Instant startTime;
     private Instant endTime;
     private int durationMinutes;
+    private int actualSeconds;
+    private boolean completed;
+    private String notes;
     private SessionType type;
     private Instant createdAt;
 }

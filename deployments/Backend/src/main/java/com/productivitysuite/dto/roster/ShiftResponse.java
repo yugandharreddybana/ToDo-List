@@ -19,5 +19,6 @@ public class ShiftResponse {
     private LocalTime endTime;
     private ShiftType shiftType;
     private String notes;
+    private String location;
     private Instant createdAt;
 }

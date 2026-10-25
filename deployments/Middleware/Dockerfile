@@ -8,17 +8,16 @@ RUN npm ci --quiet
 
 COPY . .
 RUN npm run build
+RUN npm prune --omit=dev
 
 # Production stage
 FROM node:20-alpine
 
 WORKDIR /app
 
-RUN npm install --omit=dev --quiet
-
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
-COPY .env .env
+COPY --from=builder /app/package.json ./package.json
 
 EXPOSE 3001
 

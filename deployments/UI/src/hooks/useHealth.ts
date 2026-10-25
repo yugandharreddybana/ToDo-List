@@ -112,12 +112,12 @@ export function useHabitLogs(habitId: string | null, params?: { from?: string; t
   return useQuery({
     queryKey: [HABITS_KEY, habitId, 'logs', params],
     queryFn: async () => {
-      const { data } = await api.get<HabitLog[]>(`/api/health/habits/${habitId}/logs`, {
+      const { data } = await api.get<HabitLog[]>(habitId ? `/api/health/habits/${habitId}/logs` : '/api/health/habits/logs/all', {
         params,
       });
       return data;
     },
-    enabled: !!habitId,
+    enabled: !!habitId || Boolean(params?.from && params?.to),
   });
 }
 
@@ -142,7 +142,7 @@ export function useLogHabit() {
       });
       return data;
     },
-    onSuccess: (_d, vars) =>
-      qc.invalidateQueries({ queryKey: [HABITS_KEY, vars.habitId, 'logs'] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: [HABITS_KEY] }),
   });
 }

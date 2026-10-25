@@ -12,12 +12,13 @@ import usersRouter from './routes/users.routes.js';
 import tasksRouter from './routes/tasks.routes.js';
 import sessionsRouter from './routes/sessions.routes.js';
 import goalsRouter from './routes/goals.routes.js';
-import careerRouter from './routes/career.routes.js';
 import healthRouter from './routes/health.routes.js';
 import rosterRouter from './routes/roster.routes.js';
 import analyticsRouter from './routes/analytics.routes.js';
 import notificationsRouter from './routes/notifications.routes.js';
 import aiRouter from './routes/ai.routes.js';
+import planningRouter from './routes/planning.routes.js';
+import plansRouter from './routes/plans.routes.js';
 
 const PORT = Number(process.env.PORT ?? 3001);
 const CORS_ORIGINS = (process.env.CORS_ORIGIN ?? 'http://localhost:3002')
@@ -48,7 +49,7 @@ app.use(
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(morgan('combined'));
+app.use(morgan(':method :status :response-time ms'));
 app.use(
   rateLimit({
     windowMs: Number(process.env.RATE_LIMIT_WINDOW_MS ?? 15 * 60 * 1000),
@@ -68,12 +69,13 @@ app.use('/api/users', usersRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/sessions', sessionsRouter);
 app.use('/api/goals', goalsRouter);
-app.use('/api/career', careerRouter);
 app.use('/api/health', healthRouter);
 app.use('/api/roster', rosterRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/planning', planningRouter);
+app.use('/api/plans', plansRouter);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });

@@ -1,30 +1,14 @@
-version: '3.9'
-
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: todo-postgres
     environment:
-      POSTGRES_USER: todo_user
-      POSTGRES_PASSWORD: todo_password
-      POSTGRES_DB: todo_db
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U todo_user"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: todo-redis
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,21 +17,23 @@ services:
     build:
       context: ./deployments/Backend
       dockerfile: Dockerfile
-    container_name: todo-backend
-    ports:
-      - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/todo_db
-      SPRING_DATASOURCE_USERNAME: todo_user
-      SPRING_DATASOURCE_PASSWORD: todo_password
-      SPRING_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA: todo_list
-      APP_JWT_SECRET: ${APP_JWT_SECRET:-ThisIsASuperSecretKeyThatIsAtLeast32BytesLong!!}
-      APP_CORS_ALLOWED_ORIGINS: http://localhost:3001,http://middleware:3001
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_SSL_MODE: disable
+      APP_JWT_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:?Set NVIDIA_API_KEY in .env}
+      NVIDIA_BASE_URL: ${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}
+      NVIDIA_MODEL: ${NVIDIA_MODEL:-nvidia/llama-3.3-nemotron-super-49b-v1.5}
+      APP_CORS_ALLOWED_ORIGINS: http://localhost:3002
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/actuator/health"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/api/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -56,27 +42,24 @@ services:
     build:
       context: ./deployments/Middleware
       dockerfile: Dockerfile
-    container_name: todo-middleware
     ports:
       - "3001:3001"
     environment:
       NODE_ENV: production
       PORT: 3001
-      CORS_ORIGIN: http://localhost:3002
-      REDIS_URL: redis://redis:6379
+      CORS_ORIGIN: ${MIDDLEWARE_CORS_ORIGIN:-http://localhost:3002}
       BACKEND_URL: http://backend:8080
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-ThisIsASuperSecretKeyThatIsAtLeast32BytesLong!!}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-AnotherSuperSecretKeyThatIsAtLeast32BytesLong!!}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set JWT_ACCESS_SECRET in .env}
       JWT_ACCESS_TTL: 900
-      JWT_REFRESH_TTL_DAYS: 7
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      ANTHROPIC_MODEL: claude-opus-4-6
+      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-604800}
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:?Set NVIDIA_API_KEY in .env}
+      NVIDIA_BASE_URL: ${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}
+      NVIDIA_MODEL: ${NVIDIA_MODEL:-nvidia/llama-3.3-nemotron-super-49b-v1.5}
     depends_on:
       - postgres
-      - redis
       - backend
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -86,15 +69,14 @@ services:
       context: ./deployments/UI
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: http://localhost:3001
+        VITE_API_BASE_URL: ""
         VITE_APP_NAME: "Productivity Suite"
-    container_name: todo-frontend
     ports:
-      - "3002:3002"
+      - "3002:80"
     depends_on:
       - middleware
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3002"]
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/"]
       interval: 10s
       timeout: 5s
       retries: 5

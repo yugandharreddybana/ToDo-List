@@ -1,0 +1,1 @@
+package com.productivitysuite.dto.planning; import jakarta.validation.constraints.*; import lombok.Data; @Data public class EnergyRequest { @Min(1) @Max(5) private int energy; @Min(1) @Max(5) private Integer mood; private String source="manual"; private String notes; }

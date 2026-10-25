@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
-export type ShiftType = 'MORNING' | 'AFTERNOON' | 'EVENING' | 'NIGHT' | 'CUSTOM';
+export type ShiftType = 'MORNING' | 'DAY' | 'EVENING' | 'NIGHT' | 'ON_CALL' | 'OFF';
 
 export interface RosterShift {
   id: string;

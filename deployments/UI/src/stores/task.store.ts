@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'BLOCKED' | 'DONE' | 'CANCELLED';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
 
 export interface Task {
@@ -10,10 +10,17 @@ export interface Task {
   status: TaskStatus;
   priority: TaskPriority;
   dueDate?: string;
+  estimatedMinutes?: number;
+  difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
+  energyRequirement?: 'LOW' | 'MEDIUM' | 'HIGH';
+  confidentiality?: 'PUBLIC' | 'PERSONAL' | 'CONFIDENTIAL' | 'HIGHLY_CONFIDENTIAL';
+  environment?: string;
   tags: string[];
   order: number;
   parentTaskId?: string;
   isRecurring: boolean;
+  recurrenceFreq?: 'DAILY' | 'WEEKLY' | 'MONTHLY';
+  recurrenceInterval?: number;
   createdAt: string;
   updatedAt: string;
 }

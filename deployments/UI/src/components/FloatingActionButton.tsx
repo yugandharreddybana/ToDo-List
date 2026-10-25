@@ -5,7 +5,7 @@ import {
   MicOff, Loader2, CheckCircle2, PenLine,
 } from 'lucide-react';
 import { useCreateTask } from '../hooks/useTasks';
-import { parseVoiceToTasks, generateTasksFromPrompt, type GeminiTask } from '../services/gemini';
+import { parseVoiceToTasks, generateTasksFromPrompt, type AITask } from '../services/ai';
 
 /* ─── Types ─────────────────────────────────────────────────── */
 interface FABProps {
@@ -23,7 +23,7 @@ function TaskPill({
   task,
   onRemove,
 }: {
-  task: GeminiTask;
+  task: AITask;
   onRemove: () => void;
 }) {
   const priorityColors: Record<string, string> = {
@@ -86,13 +86,14 @@ export default function FloatingActionButton({ onOpenAI }: FABProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
-  const [pendingTasks, setPendingTasks] = useState<GeminiTask[]>([]);
+  const [pendingTasks, setPendingTasks] = useState<AITask[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
   const [manualTitle, setManualTitle] = useState('');
   const [manualPriority, setManualPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'>('MEDIUM');
+  const [manualEstimatedMinutes, setManualEstimatedMinutes] = useState(25);
   const [manualDueDate, setManualDueDate] = useState('');
   const [manualTags, setManualTags] = useState('');
 
@@ -145,7 +146,7 @@ export default function FloatingActionButton({ onOpenAI }: FABProps) {
     setIsListening(false);
   }, []);
 
-  /* ── parse voice transcript via Gemini ── */
+  /* ── parse voice transcript via the server-side AI service ── */
   const handleVoiceProcess = useCallback(async () => {
     if (!transcript.trim()) return;
     setIsProcessing(true);
@@ -189,9 +190,11 @@ export default function FloatingActionButton({ onOpenAI }: FABProps) {
             title: t.title,
             description: t.description,
             priority: t.priority,
+            estimatedMinutes: t.durationMinutes,
             tags: t.tags,
             dueDate: t.dueDate ? new Date(t.dueDate).toISOString() : undefined,
             isRecurring: t.isRecurring ?? false,
+            recurrenceFreq: t.recurrenceFreq,
             status: 'TODO',
           }),
         ),
@@ -218,12 +221,14 @@ export default function FloatingActionButton({ onOpenAI }: FABProps) {
       await createTask.mutateAsync({
         title: manualTitle.trim(),
         priority: manualPriority,
+        estimatedMinutes: manualEstimatedMinutes,
         dueDate: manualDueDate ? new Date(manualDueDate).toISOString() : undefined,
         tags: manualTags ? manualTags.split(',').map((t) => t.trim()).filter(Boolean) : [],
         status: 'TODO',
       });
       setManualTitle('');
       setManualPriority('MEDIUM');
+      setManualEstimatedMinutes(25);
       setManualDueDate('');
       setManualTags('');
       setSaved(true);
@@ -233,7 +238,7 @@ export default function FloatingActionButton({ onOpenAI }: FABProps) {
     } finally {
       setIsProcessing(false);
     }
-  }, [manualTitle, manualPriority, manualDueDate, manualTags, createTask]);
+  }, [manualTitle, manualPriority, manualEstimatedMinutes, manualDueDate, manualTags, createTask]);
 
   function close() {
     stopListening();
@@ -242,6 +247,7 @@ export default function FloatingActionButton({ onOpenAI }: FABProps) {
     setAiPrompt('');
     setManualTitle('');
     setManualPriority('MEDIUM');
+      setManualEstimatedMinutes(25);
     setManualDueDate('');
     setManualTags('');
     setError('');
@@ -373,6 +379,10 @@ export default function FloatingActionButton({ onOpenAI }: FABProps) {
                       boxSizing: 'border-box',
                     }}
                   />
+                  <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.75rem' }}>Estimated minutes *
+                    <input type="number" min={1} max={1440} value={manualEstimatedMinutes} onChange={e => setManualEstimatedMinutes(Number(e.target.value))}
+                      style={{ display: 'block', width: '100%', marginTop: 4, padding: '0.5rem', background: 'rgba(255,255,255,0.06)', color: 'white', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8 }} />
+                  </label>
                   {/* Priority */}
                   <div style={{ display: 'flex', gap: '0.375rem' }}>
                     {(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const).map((p) => {
@@ -436,7 +446,7 @@ export default function FloatingActionButton({ onOpenAI }: FABProps) {
                   {/* Create button */}
                   <button
                     onClick={handleManualCreate}
-                    disabled={isProcessing || !manualTitle.trim()}
+                    disabled={isProcessing || !manualTitle.trim() || manualEstimatedMinutes < 1 || manualEstimatedMinutes > 1440}
                     style={{
                       display: 'flex',
                       alignItems: 'center',

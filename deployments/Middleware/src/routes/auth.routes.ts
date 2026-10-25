@@ -11,17 +11,18 @@ interface BackendAuthResponse {
   name: string;
   avatarUrl?: string;
   timezone?: string;
+  notificationsEnabled?: boolean;
   accessToken: string;
   refreshToken: string;
   accessTokenExpiresAt?: string;
 }
 
 function toClientResponse(data: BackendAuthResponse) {
-  const { userId, email, name, avatarUrl, timezone, accessToken, accessTokenExpiresAt } = data;
+  const { userId, email, name, avatarUrl, timezone, notificationsEnabled, accessToken, accessTokenExpiresAt } = data;
   return {
     accessToken,
     accessTokenExpiresAt,
-    user: { id: userId, email, name, avatarUrl, timezone: timezone ?? 'UTC' },
+    user: { id: userId, email, name, avatarUrl, timezone: timezone ?? 'UTC', notificationsEnabled: notificationsEnabled ?? true },
   };
 }
 

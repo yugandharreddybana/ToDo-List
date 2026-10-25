@@ -4,7 +4,7 @@ import {
   Send, Sparkles, BrainCircuit, Zap, ListTodo, TrendingUp,
   RefreshCw, Loader2, User, Bot, Plus,
 } from 'lucide-react';
-import { getAIInsight, generateTasksFromPrompt, type GeminiTask } from '../services/gemini';
+import { getAIInsight, generateTasksFromPrompt, type AITask } from '../services/ai';
 import { useCreateTask } from '../hooks/useTasks';
 import { useTasks } from '../hooks/useTasks';
 import { useAuthStore } from '../stores/auth.store';
@@ -15,7 +15,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  tasks?: GeminiTask[];
+  tasks?: AITask[];
   timestamp: Date;
 }
 
@@ -43,7 +43,7 @@ function MessageBubble({
   added,
 }: {
   message: Message;
-  onAddTasks?: (tasks: GeminiTask[]) => void;
+  onAddTasks?: (tasks: AITask[]) => void;
   added?: boolean;
 }) {
   const isUser = message.role === 'user';
@@ -201,11 +201,12 @@ export default function AI() {
         title: t.title,
         status: t.status,
         priority: t.priority,
+        estimatedMinutes: t.estimatedMinutes,
       }));
 
       const wantsTaskList = /creat|generat|plan|list|task|todo|schedule|suggest/i.test(content);
       let responseText = '';
-      let suggestedTasks: GeminiTask[] | undefined;
+      let suggestedTasks: AITask[] | undefined;
 
       if (wantsTaskList) {
         [responseText, suggestedTasks] = await Promise.all([
@@ -228,7 +229,7 @@ export default function AI() {
       setMessages((prev) => [...prev, {
         id: crypto.randomUUID(),
         role: 'assistant',
-        content: `⚠️ ${e.message ?? 'Something went wrong. Make sure VITE_GEMINI_API_KEY is set in .env'}`,
+        content: `⚠️ ${e.message ?? 'Something went wrong while contacting the AI service.'}`,
         timestamp: new Date(),
       }]);
     } finally {
@@ -236,15 +237,17 @@ export default function AI() {
     }
   }, [input, isLoading, tasks, user]);
 
-  async function addTasksFromMessage(tasks: GeminiTask[], msgId: string) {
+  async function addTasksFromMessage(tasks: AITask[], msgId: string) {
     await Promise.all(tasks.map((t) =>
       createTask.mutateAsync({
         title: t.title,
         description: t.description,
         priority: t.priority,
+        estimatedMinutes: t.durationMinutes,
         tags: t.tags,
         dueDate: t.dueDate ? new Date(t.dueDate).toISOString() : undefined,
         isRecurring: t.isRecurring ?? false,
+        recurrenceFreq: t.recurrenceFreq,
         status: 'TODO',
       }),
     ));
@@ -290,7 +293,7 @@ export default function AI() {
               AI Productivity Coach
             </h1>
             <p style={{ margin: 0, fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
-              Powered by Google Gemini · generates tasks, plans & insights
+              Powered by the configured NVIDIA NIM model · generates tasks, plans & insights
             </p>
           </div>
           <button

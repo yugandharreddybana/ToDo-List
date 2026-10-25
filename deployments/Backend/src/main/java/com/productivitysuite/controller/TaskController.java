@@ -12,6 +12,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/tasks")
@@ -50,11 +52,11 @@ public class TaskController {
         return ResponseEntity.ok(taskService.get(uid(principal), id));
     }
 
-    @PatchMapping("/{id}")
+    @RequestMapping(value = "/{id}", method = {RequestMethod.PATCH, RequestMethod.PUT})
     public ResponseEntity<TaskResponse> update(
         @AuthenticationPrincipal UserDetails principal,
         @PathVariable UUID id,
-        @Valid @RequestBody TaskRequest req
+        @Valid @RequestBody TaskPatchRequest req
     ) {
         return ResponseEntity.ok(taskService.update(uid(principal), id, req));
     }
@@ -77,6 +79,24 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskService.addSubtask(uid(principal), id, req));
     }
 
+    @GetMapping("/{id}/subtasks")
+    public List<TaskResponse.SubtaskResponse> subtasks(@AuthenticationPrincipal UserDetails principal, @PathVariable UUID id) {
+        return taskService.listSubtasks(uid(principal), id);
+    }
+
+    @PatchMapping("/{id}/subtasks/{subId}/completed")
+    public TaskResponse setSubtaskCompleted(@AuthenticationPrincipal UserDetails principal, @PathVariable UUID id,
+                                             @PathVariable UUID subId, @RequestBody Map<String, Boolean> body) {
+        if (!body.containsKey("completed") || body.get("completed") == null) throw new IllegalArgumentException("completed is required");
+        return taskService.setSubtaskCompleted(uid(principal), id, subId, body.get("completed"));
+    }
+
+    @DeleteMapping("/{id}/subtasks/{subId}")
+    public ResponseEntity<Void> deleteSubtask(@AuthenticationPrincipal UserDetails principal, @PathVariable UUID id, @PathVariable UUID subId) {
+        taskService.deleteSubtask(uid(principal), id, subId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/{id}/subtasks/{subId}")
     public ResponseEntity<TaskResponse> updateSubtask(
         @AuthenticationPrincipal UserDetails principal,
@@ -94,6 +114,23 @@ public class TaskController {
         @Valid @RequestBody CommentRequest req
     ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskService.addComment(uid(principal), id, req));
+    }
+
+    @GetMapping("/{id}/comments")
+    public List<TaskResponse.CommentResponse> comments(@AuthenticationPrincipal UserDetails principal, @PathVariable UUID id) {
+        return taskService.listComments(uid(principal), id);
+    }
+
+    @DeleteMapping("/{id}/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(@AuthenticationPrincipal UserDetails principal, @PathVariable UUID id, @PathVariable UUID commentId) {
+        taskService.deleteComment(uid(principal), id, commentId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/reorder")
+    public ResponseEntity<Void> reorder(@AuthenticationPrincipal UserDetails principal, @RequestBody Map<String, List<UUID>> body) {
+        taskService.reorder(uid(principal), body.get("orderedIds"));
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/bulk-update")

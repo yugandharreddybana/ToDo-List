@@ -3,6 +3,12 @@ import { backendAuthed } from '../services/backend.client.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
+type BackendGoal = Record<string, unknown> & { notes?: string; milestones?: unknown[] };
+const toUi = (goal: BackendGoal) => ({ ...goal, description: goal.notes });
+const toBackend = (body: Record<string, unknown>) => {
+  const { description, ...rest } = body;
+  return { ...rest, ...(description === undefined ? {} : { notes: description }) };
+};
 
 router.use(requireAuth);
 
@@ -13,7 +19,7 @@ function client(req: Request) {
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { data } = await client(req).get('/goals', { params: req.query });
-    res.json(data);
+    res.json((data as BackendGoal[]).map(toUi));
   } catch (err) {
     next(err);
   }
@@ -21,8 +27,8 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { data } = await client(req).post('/goals', req.body);
-    res.status(201).json(data);
+    const { data } = await client(req).post<BackendGoal>('/goals', toBackend(req.body));
+    res.status(201).json(toUi(data));
   } catch (err) {
     next(err);
   }
@@ -31,7 +37,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { data } = await client(req).get(`/goals/${req.params.id}`);
-    res.json(data);
+    res.json(toUi(data as BackendGoal));
   } catch (err) {
     next(err);
   }
@@ -39,8 +45,8 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 
 router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { data } = await client(req).put(`/goals/${req.params.id}`, req.body);
-    res.json(data);
+    const { data } = await client(req).patch<BackendGoal>(`/goals/${req.params.id}`, toBackend(req.body));
+    res.json(toUi(data));
   } catch (err) {
     next(err);
   }
@@ -75,7 +81,7 @@ router.get('/:id/milestones', async (req: Request, res: Response, next: NextFunc
 
 router.post('/:id/milestones', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { data } = await client(req).post(`/goals/${req.params.id}/milestones`, req.body);
+    const { data } = await client(req).post(`/goals/${req.params.id}/milestones`, { ...req.body, targetDate: req.body.dueDate });
     res.status(201).json(data);
   } catch (err) {
     next(err);

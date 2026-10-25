@@ -1,6 +1,6 @@
 package com.productivitysuite.controller;
 
-import com.productivitysuite.entity.Notification;
+import com.productivitysuite.dto.NotificationResponse;
 import com.productivitysuite.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,16 +19,22 @@ public class NotificationController {
     private final NotificationService notificationService;
 
     @GetMapping
-    public ResponseEntity<List<Notification>> list(@AuthenticationPrincipal UserDetails p) {
+    public ResponseEntity<List<NotificationResponse>> list(@AuthenticationPrincipal UserDetails p) {
         return ResponseEntity.ok(notificationService.list(uid(p)));
     }
 
     @PatchMapping("/{id}/read")
-    public ResponseEntity<Notification> markRead(
+    public ResponseEntity<NotificationResponse> markRead(
         @AuthenticationPrincipal UserDetails p,
         @PathVariable UUID id
     ) {
         return ResponseEntity.ok(notificationService.markRead(uid(p), id));
+    }
+
+    @PatchMapping("/read-all")
+    public ResponseEntity<Void> markAllRead(@AuthenticationPrincipal UserDetails p) {
+        notificationService.markAllRead(uid(p));
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")

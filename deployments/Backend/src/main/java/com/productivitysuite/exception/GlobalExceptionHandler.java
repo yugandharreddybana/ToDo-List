@@ -50,6 +50,12 @@ public class GlobalExceptionHandler {
             .body(new ErrorBody("VALIDATION_ERROR", "Request validation failed", fields));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorBody> handleInvalid(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(new ErrorBody("INVALID_REQUEST", ex.getMessage(), null));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorBody> handleGeneric(Exception ex) {
         log.error("Unhandled exception", ex);

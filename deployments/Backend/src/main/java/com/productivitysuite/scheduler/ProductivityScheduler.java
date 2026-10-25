@@ -26,7 +26,7 @@ public class ProductivityScheduler {
     private final NotificationService notificationService;
 
     /** Daily at 07:00 UTC: notify users of tasks due today */
-    @Scheduled(cron = "0 0 7 * * *", zone = "UTC")
+    // Replaced by AdaptiveScheduler's user-local, deduplicated checks.
     @Transactional
     public void sendDueTodayReminders() {
         log.info("[scheduler] Running due-today reminders");
@@ -49,7 +49,7 @@ public class ProductivityScheduler {
     }
 
     /** Daily at 02:00 UTC: process recurring task instances */
-    @Scheduled(cron = "0 0 2 * * *", zone = "UTC")
+    // Replaced by AdaptiveScheduler's recurrence processing.
     @Transactional
     public void processRecurringTasks() {
         log.info("[scheduler] Processing recurring tasks");
@@ -82,13 +82,13 @@ public class ProductivityScheduler {
     }
 
     /** Weekly on Monday at 08:00 UTC: send productivity summary */
-    @Scheduled(cron = "0 0 8 * * MON", zone = "UTC")
+    // Replaced by AdaptiveScheduler's per-period reports.
     @Transactional
     public void weeklyProductivitySummary() {
         log.info("[scheduler] Sending weekly productivity summaries");
         userRepository.findAll().forEach(user -> {
             long done = taskRepository.findFiltered(
-                user.getId(), TaskStatus.DONE, null, null, null,
+                user.getId(), TaskStatus.DONE.name(), null, null, null,
                 org.springframework.data.domain.PageRequest.of(0, Integer.MAX_VALUE)
             ).getTotalElements();
             notificationService.push(
@@ -101,7 +101,7 @@ public class ProductivityScheduler {
     }
 
     /** Hourly: check for goals with deadlines within 7 days */
-    @Scheduled(cron = "0 0 * * * *", zone = "UTC")
+    // Replaced by AdaptiveScheduler's deduplicated deadline checks.
     @Transactional
     public void checkApproachingGoalDeadlines() {
         Instant now = Instant.now();

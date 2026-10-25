@@ -75,6 +75,7 @@ export function useAIChat() {
 
       abortRef.current = new AbortController();
       let assistantText = '';
+      let pending = '';
 
       try {
         const token = getAccessToken();
@@ -107,8 +108,9 @@ export function useAIChat() {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
+          pending += decoder.decode(value, { stream: true });
+          const lines = pending.split('\n');
+          pending = lines.pop() ?? '';
 
           for (const line of lines) {
             if (!line.startsWith('data: ')) continue;

@@ -14,6 +14,7 @@ public class AuthResponse {
     private String name;
     private String avatarUrl;
     private String timezone;
+    private boolean notificationsEnabled;
     private String accessToken;
     private String refreshToken;
     private Instant accessTokenExpiresAt;

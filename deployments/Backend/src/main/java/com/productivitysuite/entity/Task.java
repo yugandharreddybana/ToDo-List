@@ -39,6 +39,28 @@ public class Task extends BaseEntity {
     @Builder.Default
     private TaskPriority priority = TaskPriority.MEDIUM;
 
+    @Column(name = "estimated_minutes", nullable = false)
+    @Builder.Default
+    private int estimatedMinutes = 25;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 12)
+    @Builder.Default
+    private TaskDifficulty difficulty = TaskDifficulty.MEDIUM;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "energy_requirement", nullable = false, length = 12)
+    @Builder.Default
+    private EnergyRequirement energyRequirement = EnergyRequirement.MEDIUM;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "confidentiality", nullable = false, length = 18)
+    @Builder.Default
+    private Confidentiality confidentiality = Confidentiality.PERSONAL;
+
+    @Column(name = "environment", length = 120)
+    private String environment;
+
     @Column(name = "due_date")
     private Instant dueDate;
 
@@ -81,5 +103,8 @@ public class Task extends BaseEntity {
 
     public enum TaskStatus { TODO, IN_PROGRESS, BLOCKED, DONE, ARCHIVED }
     public enum TaskPriority { URGENT, HIGH, MEDIUM, LOW }
+    public enum TaskDifficulty { EASY, MEDIUM, HARD }
+    public enum EnergyRequirement { LOW, MEDIUM, HIGH }
+    public enum Confidentiality { PUBLIC, PERSONAL, CONFIDENTIAL, HIGHLY_CONFIDENTIAL }
     public enum RecurrenceFreq { DAILY, WEEKLY, MONTHLY }
 }

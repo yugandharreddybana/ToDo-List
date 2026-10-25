@@ -19,6 +19,8 @@ public class HealthLogResponse {
     private Short sleepQuality;
     private BigDecimal waterIntakeLiters;
     private BigDecimal weightKg;
+    private Integer stepsCount;
+    private Integer calories;
     private String notes;
     private Instant createdAt;
 }

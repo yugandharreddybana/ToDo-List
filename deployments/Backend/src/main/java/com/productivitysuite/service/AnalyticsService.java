@@ -2,14 +2,15 @@ package com.productivitysuite.service;
 
 import com.productivitysuite.dto.analytics.*;
 import com.productivitysuite.entity.Task.TaskStatus;
+import com.productivitysuite.entity.FocusSession;
+import com.productivitysuite.entity.Task;
 import com.productivitysuite.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
+import java.time.*;
+import java.time.temporal.TemporalAdjusters;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,65 +23,78 @@ public class AnalyticsService {
     private final TaskRepository taskRepo;
     private final FocusSessionRepository sessionRepo;
     private final GoalRepository goalRepo;
-    private final CareerApplicationRepository careerRepo;
+    private final UserRepository userRepo;
+    private final ProductivityEventRepository eventRepo;
 
-    public AnalyticsSummaryResponse summary(UUID userId, String period) {
-        Instant from = periodStart(period);
-        Instant now = Instant.now();
-
-        var allTasks = taskRepo.findFiltered(userId, null, null, null, null,
-            org.springframework.data.domain.PageRequest.of(0, Integer.MAX_VALUE)).getContent();
-
-        long total = allTasks.size();
-        long done = allTasks.stream().filter(t -> t.getStatus() == TaskStatus.DONE).count();
-        double completionRate = total == 0 ? 0 : Math.round(done * 1000.0 / total) / 10.0;
-
-        int focusMinutes = sessionRepo.sumMinutesBetween(userId, from, now);
-        var sessions = sessionRepo.findByUserIdOrderByStartTimeDesc(userId);
-        long pomodoroCount = sessions.stream()
-            .filter(s -> s.getStartTime().isAfter(from))
-            .filter(s -> s.getType() == com.productivitysuite.entity.FocusSession.SessionType.POMODORO)
-            .count();
-
+    public AnalyticsSummaryResponse summary(UUID userId, String period, LocalDate customFrom, LocalDate customTo) {
+        ZoneId zone = ZoneId.of(userRepo.findById(userId).orElseThrow().getTimezone());
+        LocalDate today = LocalDate.now(zone);
+        LocalDate start = switch (period) {
+            case "day" -> today;
+            case "week" -> today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+            case "month" -> today.withDayOfMonth(1);
+            case "quarter" -> today.withMonth(((today.getMonthValue() - 1) / 3) * 3 + 1).withDayOfMonth(1);
+            case "year" -> today.withDayOfYear(1);
+            case "custom" -> customFrom;
+            default -> throw new IllegalArgumentException("Unsupported analytics period");
+        };
+        LocalDate end = period.equals("custom") ? customTo : today;
+        if (start == null || end == null || end.isBefore(start) || end.isAfter(today) || start.plusYears(2).isBefore(end))
+            throw new IllegalArgumentException("Invalid analytics date range");
+        Instant from = start.atStartOfDay(zone).toInstant();
+        Instant to = end.plusDays(1).atStartOfDay(zone).toInstant();
+        List<Task> touched = taskRepo.findByUserIdAndUpdatedAtGreaterThanEqualAndUpdatedAtLessThan(userId, from, to);
+        List<FocusSession> sessions = sessionRepo.findByUserIdAndStartTimeGreaterThanEqualAndStartTimeLessThan(userId, from, to);
+        var completions = eventRepo.findByUserIdAndEventTypeAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(userId, "task.completed", from, to);
+        Set<UUID> activeTaskIds = new HashSet<>();
+        touched.forEach(t -> activeTaskIds.add(t.getId()));
+        completions.forEach(e -> { if (e.getEntityId() != null) activeTaskIds.add(e.getEntityId()); });
+        int done = completions.size();
+        double completionRate = activeTaskIds.isEmpty() ? 0 : Math.min(100, Math.round(done * 1000.0 / activeTaskIds.size()) / 10.0);
+        int focusMinutes = (int) Math.round(sessions.stream().filter(s -> s.getType() == FocusSession.SessionType.POMODORO || s.getType() == FocusSession.SessionType.CUSTOM)
+            .mapToInt(FocusSession::getActualSeconds).sum() / 60.0);
+        int pomodoros = (int) sessions.stream().filter(s -> s.isCompleted() && s.getType() == FocusSession.SessionType.POMODORO).count();
         var goals = goalRepo.findByUserIdOrderByCreatedAtDesc(userId);
-        long activeGoals = goals.stream()
-            .filter(g -> g.getStatus() == com.productivitysuite.entity.Goal.GoalStatus.ACTIVE).count();
-        double avgProgress = goals.isEmpty() ? 0 :
-            goals.stream().mapToInt(com.productivitysuite.entity.Goal::getProgress).average().orElse(0);
-
-        long careerApps = careerRepo.findByUserIdOrderByCreatedAtDesc(userId).size();
-
-        // Daily counts for period
-        DateTimeFormatter fmt = DateTimeFormatter.ISO_LOCAL_DATE;
-        Map<String, Integer> completionByDay = allTasks.stream()
-            .filter(t -> t.getStatus() == TaskStatus.DONE && t.getUpdatedAt().isAfter(from))
-            .collect(Collectors.groupingBy(
-                t -> LocalDate.ofInstant(t.getUpdatedAt(), ZoneOffset.UTC).format(fmt),
-                Collectors.collectingAndThen(Collectors.counting(), Long::intValue)));
-
-        List<AnalyticsSummaryResponse.DailyCount> taskByDay = completionByDay.entrySet().stream()
-            .map(e -> AnalyticsSummaryResponse.DailyCount.builder().date(e.getKey()).count(e.getValue()).build())
-            .sorted(Comparator.comparing(AnalyticsSummaryResponse.DailyCount::getDate))
-            .collect(Collectors.toList());
-
-        return AnalyticsSummaryResponse.builder()
-            .totalTasks((int) total).completedTasks((int) done).completionRate(completionRate)
-            .totalFocusMinutes(focusMinutes).pomodoroSessions((int) pomodoroCount)
-            .activeGoals((int) activeGoals).avgGoalProgress(avgProgress)
-            .careerApplications((int) careerApps)
-            .taskCompletionByDay(taskByDay).focusMinutesByDay(List.of())
-            .build();
+        int activeGoals = (int) goals.stream().filter(g -> g.getStatus() == com.productivitysuite.entity.Goal.GoalStatus.ACTIVE).count();
+        double avgProgress = goals.isEmpty() ? 0 : goals.stream().mapToInt(com.productivitysuite.entity.Goal::getProgress).average().orElse(0);
+        Map<String, Integer> taskCounts = new HashMap<>();
+        for (var event : completions)
+            taskCounts.merge(LocalDate.ofInstant(event.getCreatedAt(), zone).toString(), 1, Integer::sum);
+        Map<String, Integer> focusSeconds = new HashMap<>();
+        Map<UUID, List<FocusSession>> byTask = new HashMap<>();
+        for (FocusSession session : sessions) {
+            if (session.getType() != FocusSession.SessionType.POMODORO && session.getType() != FocusSession.SessionType.CUSTOM) continue;
+            focusSeconds.merge(LocalDate.ofInstant(session.getStartTime(), zone).toString(), session.getActualSeconds(), Integer::sum);
+            if (session.getTask() != null) byTask.computeIfAbsent(session.getTask().getId(), ignored -> new ArrayList<>()).add(session);
+        }
+        List<AnalyticsSummaryResponse.DailyCount> taskByDay = new ArrayList<>();
+        List<AnalyticsSummaryResponse.DailyCount> focusByDay = new ArrayList<>();
+        for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+            String key = date.toString();
+            taskByDay.add(AnalyticsSummaryResponse.DailyCount.builder().date(key).count(taskCounts.getOrDefault(key, 0)).build());
+            focusByDay.add(AnalyticsSummaryResponse.DailyCount.builder().date(key).count((int) Math.round(focusSeconds.getOrDefault(key, 0) / 60.0)).build());
+        }
+        List<AnalyticsSummaryResponse.TaskFocus> focusByTask = byTask.entrySet().stream().map(entry -> {
+            List<FocusSession> group = entry.getValue();
+            return AnalyticsSummaryResponse.TaskFocus.builder().taskId(entry.getKey().toString())
+                .title(group.get(0).getTask().getTitle()).sessions(group.size())
+                .actualMinutes((int) Math.round(group.stream().mapToInt(FocusSession::getActualSeconds).sum() / 60.0)).build();
+        }).sorted(Comparator.comparingInt(AnalyticsSummaryResponse.TaskFocus::getActualMinutes).reversed()).toList();
+        return AnalyticsSummaryResponse.builder().fromDate(start.toString()).toDate(end.toString())
+            .totalTasks(activeTaskIds.size()).completedTasks(done).completionRate(completionRate)
+            .totalFocusMinutes(focusMinutes).pomodoroSessions(pomodoros).activeGoals(activeGoals)
+            .avgGoalProgress(avgProgress).taskCompletionByDay(taskByDay).focusMinutesByDay(focusByDay)
+            .focusByTask(focusByTask).build();
     }
 
     public HeatmapResponse heatmap(UUID userId) {
         Instant yearAgo = Instant.now().minus(365, java.time.temporal.ChronoUnit.DAYS);
-        var tasks = taskRepo.findFiltered(userId, TaskStatus.DONE, null, null, null,
-            org.springframework.data.domain.PageRequest.of(0, Integer.MAX_VALUE)).getContent();
+        var completions = eventRepo.findByUserIdAndEventTypeAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(userId, "task.completed", yearAgo, Instant.now());
         DateTimeFormatter fmt = DateTimeFormatter.ISO_LOCAL_DATE;
-        Map<String, Long> countByDay = tasks.stream()
-            .filter(t -> t.getUpdatedAt().isAfter(yearAgo))
+        ZoneId zone = ZoneId.of(userRepo.findById(userId).orElseThrow().getTimezone());
+        Map<String, Long> countByDay = completions.stream()
             .collect(Collectors.groupingBy(
-                t -> LocalDate.ofInstant(t.getUpdatedAt(), ZoneOffset.UTC).format(fmt),
+                event -> LocalDate.ofInstant(event.getCreatedAt(), zone).format(fmt),
                 Collectors.counting()));
 
         long max = countByDay.values().stream().mapToLong(Long::longValue).max().orElse(1);
@@ -96,11 +110,4 @@ public class AnalyticsService {
         return HeatmapResponse.builder().cells(cells).build();
     }
 
-    private Instant periodStart(String period) {
-        return switch (period) {
-            case "month" -> Instant.now().minus(30, java.time.temporal.ChronoUnit.DAYS);
-            case "year"  -> Instant.now().minus(365, java.time.temporal.ChronoUnit.DAYS);
-            default      -> Instant.now().minus(7, java.time.temporal.ChronoUnit.DAYS);
-        };
-    }
 }

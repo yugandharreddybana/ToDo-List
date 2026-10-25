@@ -3,6 +3,7 @@ package com.productivitysuite.repository;
 import com.productivitysuite.entity.Goal;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
@@ -15,5 +16,6 @@ public interface GoalRepository extends JpaRepository<Goal, UUID> {
     Optional<Goal> findByIdAndUserId(UUID id, UUID userId);
 
     @Query("SELECT g FROM Goal g WHERE g.status = 'ACTIVE' AND g.targetDate BETWEEN :from AND :to")
+    @EntityGraph(attributePaths = {"user"})
     List<Goal> findApproachingDeadlines(@Param("from") Instant from, @Param("to") Instant to);
 }

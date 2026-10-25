@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 
-export type GoalStatus = 'ACTIVE' | 'COMPLETED' | 'PAUSED' | 'CANCELLED';
-export type GoalCategory = 'CAREER' | 'HEALTH' | 'LEARNING' | 'PERSONAL' | 'FINANCE' | 'OTHER';
+export type GoalStatus = 'ACTIVE' | 'COMPLETED' | 'PAUSED' | 'ARCHIVED';
+export type GoalCategory = 'CAREER' | 'HEALTH' | 'LEARNING' | 'PERSONAL' | 'FINANCIAL';
 
 export interface Goal {
   id: string;
   title: string;
   description?: string;
+  notes?: string;
   category: GoalCategory;
   status: GoalStatus;
   progress: number;

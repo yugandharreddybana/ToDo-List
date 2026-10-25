@@ -10,7 +10,7 @@ import { Select } from './ui/Select';
 import { Toggle } from './ui/Toggle';
 import { Badge } from './ui/Badge';
 
-type Tab = 'profile' | 'security' | 'pomodoro' | 'notifications';
+type Tab = 'profile' | 'security' | 'pomodoro' | 'planning' | 'notifications';
 
 export default function Settings() {
   const { user, updateUser } = useAuthStore();
@@ -77,10 +77,20 @@ export default function Settings() {
     setTimeout(() => setSaved(false), 2000);
   }
 
+  async function setNotificationsEnabled(enabled: boolean) {
+    setError('');
+    try {
+      const { data } = await api.put('/api/users/profile', { notificationsEnabled: enabled });
+      updateUser(data as typeof user & { notificationsEnabled: boolean });
+      settings.setNotificationsEnabled(enabled);
+    } catch { setError('Could not update notification preference.'); }
+  }
+
   const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'security', label: 'Security', icon: Lock },
     { id: 'pomodoro', label: 'Focus Timer', icon: Timer },
+    { id: 'planning', label: 'Daily Planning', icon: Timer },
     { id: 'notifications', label: 'Notifications', icon: Bell },
   ];
 
@@ -212,12 +222,23 @@ export default function Settings() {
                 </div>
               )}
 
+              {activeTab === 'planning' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <h2 style={{ fontSize: '1rem', margin: 0 }}>Daily Planning Defaults</h2>
+                  <p style={{ margin: 0, color: 'var(--text-secondary)' }}>You can change these for each proposal.</p>
+                  <Input label="Day starts" type="time" value={settings.planningWindowStart} onChange={e => settings.setPlanningSettings({ windowStart: e.target.value })} />
+                  <Input label="Day ends" type="time" value={settings.planningWindowEnd} onChange={e => settings.setPlanningSettings({ windowEnd: e.target.value })} />
+                  <Input label="Buffer between tasks (minutes)" type="number" min={0} max={60} value={settings.planningBufferMinutes} onChange={e => settings.setPlanningSettings({ bufferMinutes: Math.max(0, Math.min(60, Number(e.target.value))) })} />
+                  <label><input type="checkbox" checked={settings.askAboutCommitments} onChange={e => settings.setPlanningSettings({ askAboutCommitments: e.target.checked })} /> Ask about fixed commitments before planning</label>
+                </div>
+              )}
+
               {activeTab === 'notifications' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <h2 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 0.25rem' }}>Notification Preferences</h2>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     {[
-                      { label: 'Enable Notifications', sub: 'Receive in-app notifications', key: 'notificationsEnabled' as const, value: settings.notificationsEnabled, set: settings.setNotificationsEnabled },
+                      { label: 'Enable Notifications', sub: 'Receive in-app notifications', key: 'notificationsEnabled' as const, value: user?.notificationsEnabled ?? true, set: setNotificationsEnabled },
                       { label: 'Sound Effects', sub: 'Play sounds for timer and alerts', key: 'soundEnabled' as const, value: settings.soundEnabled, set: settings.setSoundEnabled },
                     ].map(({ label, sub, value, set }) => (
                       <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1rem', background: 'var(--bg-primary)', borderRadius: 'var(--radius-md)' }}>
